@@ -10,6 +10,7 @@ error VOTING_PERIOD_ENDED();
 error INVAILD_OPTION();
 error USER_HAS_ALREADY_VOTED();
 error AMOUNT_IS_LOW();
+error USER_HAS_NOT_VOTED();
 
 contract WiseBet {
     uint256 private proposalCount;
@@ -31,6 +32,7 @@ contract WiseBet {
     mapping(uint256 => Proposal) public proposals;
     mapping(uint256 => mapping(address => bool)) public userVoted;
     mapping(uint256 => mapping(address => uint256)) public userStakes;
+    mapping(uint256 => mapping(address => uint256)) public userOpinionSelected;
 
     ///  EVENTS ///
     event ProposalCreated(
@@ -104,6 +106,7 @@ contract WiseBet {
 
         userVoted[_proposalId][msg.sender] = true;
         userStakes[_proposalId][msg.sender] = _amount;
+        userOpinionSelected[_proposalId][msg.sender] = _option;
 
         if (_option == 1) {
             ++proposal.option1Votes;
@@ -114,5 +117,27 @@ contract WiseBet {
         }
 
         emit VotePlaced(_proposalId, msg.sender, _option, _amount);
+    }
+
+    function increaseBet(
+        uint256 _proposalId,
+        uint256 _amount
+    ) external payable {
+        if (_amount < msg.value) revert AMOUNT_IS_LOW();
+        Proposal storage proposal = proposals[_proposalId];
+        if (proposal.deadline < block.timestamp) revert VOTING_PERIOD_ENDED();
+
+        if (!userVoted[_proposalId][msg.sender]) revert USER_HAS_NOT_VOTED();
+
+        userStakes[_proposalId][msg.sender] += _amount;
+        uint256 userOption = userOpinionSelected[_proposalId][msg.sender];
+
+        if (userOption == 1) {
+            proposal.option1Pool += _amount;
+        } else {
+            proposal.option2Pool += _amount;
+        }
+
+        emit VotePlaced(_proposalId, msg.sender, userOption, _amount);
     }
 }
