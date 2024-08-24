@@ -8,9 +8,14 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 error INVALID_DEADLINE();
 error VOTING_PERIOD_ENDED();
 error INVAILD_OPTION();
+error INVAILD_WINNING_OPTION();
 error USER_HAS_ALREADY_VOTED();
 error AMOUNT_IS_LOW();
 error USER_HAS_NOT_VOTED();
+error ONLY_OWNER_CAN_CALL();
+error VOTING_PERIOD_NOT_OVER();
+error PROPOSAL_ALREADY_FINALIZED();
+error PROPOSAL_NOT_FINALIZED();
 
 contract WiseBet {
     uint256 private proposalCount;
@@ -51,6 +56,11 @@ contract WiseBet {
     event ProposalFinalized(uint256 indexed proposalId, uint256 winningOption);
     event RewardsDistributed(uint256 indexed proposalId, uint256 totalRewards);
     event RewardWithdrawn(address indexed user, uint256 amount);
+
+    modifier onlyOwner() {
+        if (msg.sender != owner) revert ONLY_OWNER_CAN_CALL();
+        _;
+    }
 
     constructor(address _owner) {
         owner = _owner;
@@ -139,5 +149,27 @@ contract WiseBet {
         }
 
         emit VotePlaced(_proposalId, msg.sender, userOption, _amount);
+    }
+
+    /// @notice function to decide the winner
+    function finalizeProposal(
+        uint256 _proposalId,
+        uint256 _winningOption
+    ) external onlyOwner {
+        Proposal storage proposal = proposals[_proposalId];
+        if (proposal.deadline > block.timestamp)
+            revert VOTING_PERIOD_NOT_OVER();
+        if (proposal.isFinalized) revert PROPOSAL_ALREADY_FINALIZED();
+        // require(
+        //     _winningOption == 1 || _winningOption == 2,
+        //     "Invalid winning option"
+        // );
+        if (_winningOption != 1 && _winningOption != 2)
+            revert INVAILD_WINNING_OPTION();
+
+        proposal.isFinalized = true;
+        proposal.winningOption = _winningOption;
+
+        emit ProposalFinalized(_proposalId, _winningOption);
     }
 }
