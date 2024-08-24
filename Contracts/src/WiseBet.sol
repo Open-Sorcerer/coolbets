@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-
 error INVALID_DEADLINE();
 error VOTING_PERIOD_ENDED();
 error INVAILD_OPTION();
@@ -15,6 +13,7 @@ error VOTING_PERIOD_NOT_OVER();
 error PROPOSAL_ALREADY_FINALIZED();
 error PROPOSAL_NOT_FINALIZED();
 error VALUE_NOT_TRANSFERED();
+error ONLY_WHITELISTED_ADDRESS(address caller);
 
 contract WiseBet {
     uint256 private proposalCount;
@@ -40,8 +39,8 @@ contract WiseBet {
     mapping(uint256 => mapping(address => bool)) private userVoted;
     mapping(uint256 => mapping(address => uint256)) private userStakes;
     mapping(uint256 => mapping(address => uint256)) private userOpinionSelected;
+    mapping(address => bool) private isWhitelisted;
 
-    ///  EVENTS ///
     event ProposalCreated(
         uint256 indexed proposalId,
         string description,
@@ -64,8 +63,19 @@ contract WiseBet {
         _;
     }
 
+    modifier onlyWhiteListed() {
+        if (!isWhitelisted[msg.sender])
+            revert ONLY_WHITELISTED_ADDRESS(msg.sender);
+        _;
+    }
+
     constructor(address _owner) {
         i_owner = _owner;
+    }
+
+    /// @notice function to set whitelisted addresses
+    function setWhitelist(address _whitelist, bool _value) external onlyOwner {
+        isWhitelisted[_whitelist] = _value;
     }
 
     /**
@@ -133,6 +143,7 @@ contract WiseBet {
         emit VotePlaced(_proposalId, msg.sender, _option, _amount);
     }
 
+    /// @notice function to call if user wants to increase the bet on already selected opinion
     function increaseBet(
         uint256 _proposalId,
         uint256 _amount
@@ -159,7 +170,7 @@ contract WiseBet {
     function finalizeProposal(
         uint256 _proposalId,
         uint256 _winningOption
-    ) external onlyOwner {
+    ) external onlyWhiteListed {
         Proposal storage proposal = proposals[_proposalId];
         if (proposal.deadline > block.timestamp)
             revert VOTING_PERIOD_NOT_OVER();
@@ -173,7 +184,8 @@ contract WiseBet {
         emit ProposalFinalized(_proposalId, _winningOption);
     }
 
-    function distributeRewards(uint256 _proposalId) external onlyOwner {
+    /// @notice function to distribute stake to the winners
+    function distributeRewards(uint256 _proposalId) external onlyWhiteListed {
         Proposal storage proposal = proposals[_proposalId];
 
         if (!proposal.isFinalized) revert PROPOSAL_NOT_FINALIZED();
@@ -218,6 +230,8 @@ contract WiseBet {
     // -------------------------------------//
     //      GETTER FUNCTION                 //
     // -------------------------------------//
+
+    ///@notice function to check whether the user voted or not
     function getUserVote(
         uint256 _proposalId,
         address _user
@@ -225,6 +239,7 @@ contract WiseBet {
         return userVoted[_proposalId][_user];
     }
 
+    /// @notice function to get the stake / bet amount of user
     function getUserStakeValue(
         uint256 _proposalId,
         address _user
@@ -232,24 +247,33 @@ contract WiseBet {
         return userStakes[_proposalId][_user];
     }
 
+    ///@notice function to get the owner of the contract
     function getOwner() external view returns (address) {
         return i_owner;
     }
 
+    ///@notice function to get the proposal Count
     function getProposalCount() external view returns (uint256) {
         return proposalCount;
     }
 
+    ///@notice function to get Proposal detail by proposal ID
     function getProposalsById(
-        uint256 id
+        uint256 _id
     ) external view returns (Proposal memory) {
-        return proposals[id];
+        return proposals[_id];
     }
 
+    ///@notice function to get the user opinion
     function getUserOpinion(
         uint256 _id,
         address _user
     ) external view returns (uint256) {
         return userOpinionSelected[_id][_user];
+    }
+
+    ///@notice function to check whether this address is whitelisted or not
+    function getWhitelisted(address _user) external view returns (bool) {
+        return isWhitelisted[_user];
     }
 }
