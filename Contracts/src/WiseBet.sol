@@ -20,7 +20,7 @@ error VALUE_NOT_TRANSFERED();
 
 contract WiseBet {
     uint256 private proposalCount;
-    address private owner;
+    address private i_owner;
 
     struct Proposal {
         string description;
@@ -62,12 +62,12 @@ contract WiseBet {
     event RewardReceivedUser(address indexed user, uint256 amount);
 
     modifier onlyOwner() {
-        if (msg.sender != owner) revert ONLY_OWNER_CAN_CALL();
+        if (msg.sender != i_owner) revert ONLY_OWNER_CAN_CALL();
         _;
     }
 
     constructor(address _owner) {
-        owner = _owner;
+        i_owner = _owner;
     }
 
     /**
@@ -182,9 +182,6 @@ contract WiseBet {
 
         uint256 totalPool = proposal.option1Pool + proposal.option2Pool;
         uint256 totalRewards;
-        // uint256 numberOfWinners = proposal.winningOption == 1
-        //     ? proposal.option1Votes
-        //     : proposal.option2Votes;
 
         if (proposal.winningOption == 1) {
             for (uint256 i = 0; i < proposal.option1Votes; i++) {
@@ -216,5 +213,30 @@ contract WiseBet {
             }
             emit RewardsDistributed(_proposalId, totalRewards);
         }
+    }
+
+    // -------------------------------------//
+    //      GETTER FUNCTION                 //
+    // -------------------------------------//
+    function getUserVote(
+        uint256 _proposalId,
+        address _user
+    ) external view returns (bool) {
+        return userVoted[_proposalId][_user];
+    }
+
+    function getUserStakeValue(
+        uint256 _proposalId,
+        address _user
+    ) external view returns (uint256) {
+        return userStakes[_proposalId][_user];
+    }
+
+    function getOwner() external view returns (address) {
+        return i_owner;
+    }
+
+    function getProposalCount() external view returns (uint256) {
+        return proposalCount;
     }
 }
