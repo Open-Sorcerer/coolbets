@@ -16,6 +16,7 @@ error ONLY_OWNER_CAN_CALL();
 error VOTING_PERIOD_NOT_OVER();
 error PROPOSAL_ALREADY_FINALIZED();
 error PROPOSAL_NOT_FINALIZED();
+error VALUE_NOT_TRANSFERED();
 
 contract WiseBet {
     uint256 private proposalCount;
@@ -33,6 +34,9 @@ contract WiseBet {
         bool isFinalized;
         uint256 winningOption;
     }
+
+    address[] public option1Users;
+    address[] public option2Users;
 
     mapping(uint256 => Proposal) public proposals;
     mapping(uint256 => mapping(address => bool)) public userVoted;
@@ -55,7 +59,7 @@ contract WiseBet {
     );
     event ProposalFinalized(uint256 indexed proposalId, uint256 winningOption);
     event RewardsDistributed(uint256 indexed proposalId, uint256 totalRewards);
-    event RewardWithdrawn(address indexed user, uint256 amount);
+    event RewardReceivedUser(address indexed user, uint256 amount);
 
     modifier onlyOwner() {
         if (msg.sender != owner) revert ONLY_OWNER_CAN_CALL();
@@ -121,9 +125,11 @@ contract WiseBet {
         if (_option == 1) {
             ++proposal.option1Votes;
             proposal.option1Pool += _amount;
+            option1Users.push(msg.sender);
         } else {
             ++proposal.option2Votes;
             proposal.option2Pool += _amount;
+            option2Users.push(msg.sender);
         }
 
         emit VotePlaced(_proposalId, msg.sender, _option, _amount);
@@ -160,10 +166,6 @@ contract WiseBet {
         if (proposal.deadline > block.timestamp)
             revert VOTING_PERIOD_NOT_OVER();
         if (proposal.isFinalized) revert PROPOSAL_ALREADY_FINALIZED();
-        // require(
-        //     _winningOption == 1 || _winningOption == 2,
-        //     "Invalid winning option"
-        // );
         if (_winningOption != 1 && _winningOption != 2)
             revert INVAILD_WINNING_OPTION();
 
@@ -171,5 +173,48 @@ contract WiseBet {
         proposal.winningOption = _winningOption;
 
         emit ProposalFinalized(_proposalId, _winningOption);
+    }
+
+    function distributeRewards(uint256 _proposalId) external onlyOwner {
+        Proposal storage proposal = proposals[_proposalId];
+
+        if (!proposal.isFinalized) revert PROPOSAL_NOT_FINALIZED();
+
+        uint256 totalPool = proposal.option1Pool + proposal.option2Pool;
+        uint256 totalRewards;
+        // uint256 numberOfWinners = proposal.winningOption == 1
+        //     ? proposal.option1Votes
+        //     : proposal.option2Votes;
+
+        if (proposal.winningOption == 1) {
+            for (uint256 i = 0; i < proposal.option1Votes; i++) {
+                address user = option1Users[i];
+                uint256 userStake = userStakes[_proposalId][user];
+                uint256 userReward = (userStake * totalPool) /
+                    proposal.option1Pool;
+                totalRewards += userReward;
+                userStakes[_proposalId][user] = 0;
+
+                (bool success, ) = user.call{value: userReward}("");
+                if (!success) revert VALUE_NOT_TRANSFERED();
+
+                emit RewardReceivedUser(user, userReward);
+            }
+        } else {
+            for (uint256 i = 0; i < proposal.option2Votes; i++) {
+                address user = option2Users[i];
+                uint256 userStake = userStakes[_proposalId][user];
+                uint256 userReward = (userStake * totalPool) /
+                    proposal.option2Pool;
+                totalRewards += userReward;
+                userStakes[_proposalId][user] = 0;
+
+                (bool success, ) = payable(user).call{value: userReward}("");
+                if (!success) revert VALUE_NOT_TRANSFERED();
+
+                emit RewardReceivedUser(user, userReward);
+            }
+            emit RewardsDistributed(_proposalId, totalRewards);
+        }
     }
 }
