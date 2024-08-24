@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 error INVALID_DEADLINE();
@@ -35,13 +33,13 @@ contract WiseBet {
         uint256 winningOption;
     }
 
-    address[] public option1Users;
-    address[] public option2Users;
+    address[] private option1Users;
+    address[] private option2Users;
 
-    mapping(uint256 => Proposal) public proposals;
-    mapping(uint256 => mapping(address => bool)) public userVoted;
-    mapping(uint256 => mapping(address => uint256)) public userStakes;
-    mapping(uint256 => mapping(address => uint256)) public userOpinionSelected;
+    mapping(uint256 => Proposal) private proposals;
+    mapping(uint256 => mapping(address => bool)) private userVoted;
+    mapping(uint256 => mapping(address => uint256)) private userStakes;
+    mapping(uint256 => mapping(address => uint256)) private userOpinionSelected;
 
     ///  EVENTS ///
     event ProposalCreated(
@@ -182,34 +180,36 @@ contract WiseBet {
 
         uint256 totalPool = proposal.option1Pool + proposal.option2Pool;
         uint256 totalRewards;
+        address user;
+        uint256 userStake;
+        uint256 userReward;
 
         if (proposal.winningOption == 1) {
             for (uint256 i = 0; i < proposal.option1Votes; i++) {
-                address user = option1Users[i];
-                uint256 userStake = userStakes[_proposalId][user];
-                uint256 userReward = (userStake * totalPool) /
-                    proposal.option1Pool;
+                user = option1Users[i];
+                userStake = userStakes[_proposalId][user];
+                userReward = (userStake * totalPool) / proposal.option1Pool;
                 totalRewards += userReward;
+
                 userStakes[_proposalId][user] = 0;
+
+                emit RewardReceivedUser(user, userReward);
 
                 (bool success, ) = user.call{value: userReward}("");
                 if (!success) revert VALUE_NOT_TRANSFERED();
-
-                emit RewardReceivedUser(user, userReward);
             }
         } else {
             for (uint256 i = 0; i < proposal.option2Votes; i++) {
-                address user = option2Users[i];
-                uint256 userStake = userStakes[_proposalId][user];
-                uint256 userReward = (userStake * totalPool) /
-                    proposal.option2Pool;
+                user = option2Users[i];
+                userStake = userStakes[_proposalId][user];
+                userReward = (userStake * totalPool) / proposal.option2Pool;
                 totalRewards += userReward;
                 userStakes[_proposalId][user] = 0;
 
+                emit RewardReceivedUser(user, userReward);
+
                 (bool success, ) = payable(user).call{value: userReward}("");
                 if (!success) revert VALUE_NOT_TRANSFERED();
-
-                emit RewardReceivedUser(user, userReward);
             }
             emit RewardsDistributed(_proposalId, totalRewards);
         }
@@ -238,5 +238,18 @@ contract WiseBet {
 
     function getProposalCount() external view returns (uint256) {
         return proposalCount;
+    }
+
+    function getProposalsById(
+        uint256 id
+    ) external view returns (Proposal memory) {
+        return proposals[id];
+    }
+
+    function getUserOpinion(
+        uint256 _id,
+        address _user
+    ) external view returns (uint256) {
+        return userOpinionSelected[_id][_user];
     }
 }
