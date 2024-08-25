@@ -1,4 +1,8 @@
-Rootstock = https://explorer.testnet.rootstock.io/address/0xf2323d5d9e6903d40e47f80d2ed6785a6c3d7c2b?__tab=transactions&__ctab=general
-
+Rootstock scan link = https://explorer.testnet.rootstock.io/address/0xf2323d5d9e6903d40e47f80d2ed6785a6c3d7c2b
 Rootstock contract address : 0xf2323D5D9e6903d40E47F80d2Ed6785a6c3d7c2B
 
+Chiliz scan link : https://chiliscan.com/address/0xE1486aa7d249cf84Ff532a7dbD424baa50Eb6d29
+Chiliz contract address : 0xE1486aa7d249cf84Ff532a7dbD424baa50Eb6d29
+
+Morph L2 scan link : https://explorer-holesky.morphl2.io/address/0xE1486aa7d249cf84Ff532a7dbD424baa50Eb6d29
+Morph L2 contract address : 0xE1486aa7d249cf84Ff532a7dbD424baa50Eb6d29
