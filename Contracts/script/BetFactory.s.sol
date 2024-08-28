@@ -23,5 +23,6 @@ contract DeployBetFactory is Script {
     }
 }
 
-// forge script script/Counter.s.sol --rpc-url $ROOTSTOCK_RPC_URL --broadcast --legacy
 // forge script script/BetFactory.s.sol --rpc-url $ROOTSTOCK_TESTNETWORK_RPC_URL --broadcast --legacy
+// forge script script/BetFactory.s.sol --rpc-url $CHILIZ_TESTNETWORK_RPC_URL --broadcast
+// forge script script/BetFactory.s.sol --rpc-url $MORPHL2_HOLESKY_RPC_URL --broadcast --legacy
