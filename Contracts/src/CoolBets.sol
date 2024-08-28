@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "forge-std/Test.sol";
-
 error INVALID_DEADLINE();
 error ONLY_OWNER_CAN_CALL();
 error VOTING_PERIOD_ENDED();
@@ -137,15 +135,11 @@ contract CoolBets {
 
         if (_option == 1) {
             ++proposal.option1Votes;
-            console.log("value of option1Votes", proposal.option1Votes);
             proposal.option1Pool += _amount;
-            console.log("value of option1Pool", proposal.option1Pool);
             option1Users.push(msg.sender);
         } else {
             proposal.option2Votes += 1;
-            console.log("value of option2Votes", proposal.option2Votes);
             proposal.option2Pool += _amount;
-            console.log("value of option2Pool", proposal.option2Pool);
             option2Users.push(msg.sender);
         }
 
