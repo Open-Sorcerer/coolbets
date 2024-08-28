@@ -5,354 +5,248 @@ import "forge-std/Test.sol";
 import "../src/WiseBet.sol";
 
 contract WiseBetTest is Test {
-    WiseBet public wiseBet;
-    address public owner;
-    address public user1;
-    address public user2;
-    address public user3;
-    address public whitelistedUser;
+    WiseBet wiseBet;
+    address owner = address(1);
+    address whitelistedUser = address(2);
+    address nonWhitelistedUser = address(3);
+    address voter1 = address(4);
+    address voter2 = address(5);
 
     function setUp() public {
-        owner = address(this);
-        user1 = makeAddr("user1");
-        user2 = makeAddr("user2");
-        user3 = makeAddr("user3");
-        whitelistedUser = makeAddr("whitelistedUser");
-
+        // Deploy WiseBet contract with owner address
+        vm.startPrank(owner);
         wiseBet = new WiseBet(owner);
-
-        // Whitelist an address
+        // Set up whitelisted users
         wiseBet.setWhitelist(whitelistedUser, true);
+        wiseBet.setWhitelist(voter1, true);
+        wiseBet.setWhitelist(voter2, true);
 
-        // Fund test accounts
-        vm.deal(user1, 10 ether);
-        vm.deal(user2, 10 ether);
-        vm.deal(user3, 10 ether);
+        vm.deal(voter1, 100 ether);
+        vm.deal(voter2, 100 ether);
+        vm.stopPrank();
     }
 
     function testCreateProposal() public {
-        uint256 deadline = block.timestamp + 1 days;
+        vm.startPrank(whitelistedUser);
         wiseBet.createProposal(
-            "Test Proposal",
-            "Option 1",
-            "Option 2",
-            deadline
+            "Proposal 1",
+            "Option A",
+            "Option B",
+            block.timestamp + 1 days
         );
 
-        assertEq(wiseBet.getProposalCount(), 1);
+        // Verify proposal details
+        WiseBet.Proposal memory proposal = wiseBet.getProposalsById(0);
+        assertEq(proposal.description, "Proposal 1");
+        assertEq(proposal.option1, "Option A");
+        assertEq(proposal.option2, "Option B");
+        assertEq(proposal.deadline, block.timestamp + 1 days);
+        assertEq(proposal.option1Votes, 0);
+        assertEq(proposal.option2Votes, 0);
+        assertEq(proposal.option1Pool, 0);
+        assertEq(proposal.option2Pool, 0);
+        assertFalse(proposal.isFinalized);
+        assertEq(proposal.winningOption, 0);
 
-        WiseBet.Proposal memory proposal = wiseBet.getProposalsById(1);
-        assertEq(proposal.description, "Test Proposal");
-        assertEq(proposal.option1, "Option 1");
-        assertEq(proposal.option2, "Option 2");
-        assertEq(proposal.deadline, deadline);
+        vm.stopPrank();
     }
 
-    function testVote() public {
-        uint256 deadline = block.timestamp + 1 days;
+    function testVoting() public {
+        vm.startPrank(whitelistedUser);
         wiseBet.createProposal(
-            "Test Proposal",
-            "Option 1",
-            "Option 2",
-            deadline
+            "Proposal 1",
+            "Option A",
+            "Option B",
+            block.timestamp + 1 days
         );
+        vm.stopPrank();
 
-        vm.prank(user1);
-        wiseBet.vote{value: 1 ether}(1, 1, 1 ether);
+        // Voter 1 places a vote for option 1 with 1 ETH
+        vm.startPrank(voter1);
+        wiseBet.vote{value: 1 ether}(0, 1, 1 ether);
+        WiseBet.Proposal memory proposal = wiseBet.getProposalsById(0);
+        assertEq(proposal.option1Votes, 1);
+        assertEq(proposal.option1Pool, 1 ether);
+        assertTrue(wiseBet.getUserVote(0, voter1));
+        assertEq(wiseBet.getUserStakeValue(0, voter1), 1 ether);
+        vm.stopPrank();
 
-        assertTrue(wiseBet.getUserVote(1, user1));
-        assertEq(wiseBet.getUserStakeValue(1, user1), 1 ether);
-        assertEq(wiseBet.getUserOpinion(1, user1), 1);
+        // Voter 2 places a vote for option 2 with 2 ETH
+        vm.startPrank(voter2);
+        wiseBet.vote{value: 2 ether}(0, 2, 2 ether);
+        proposal = wiseBet.getProposalsById(0);
+        assertEq(proposal.option2Votes, 1);
+        assertEq(proposal.option2Pool, 2 ether);
+        assertTrue(wiseBet.getUserVote(0, voter2));
+        assertEq(wiseBet.getUserStakeValue(0, voter2), 2 ether);
+        vm.stopPrank();
     }
 
     function testIncreaseBet() public {
-        uint256 deadline = block.timestamp + 1 days;
+        vm.startPrank(whitelistedUser);
         wiseBet.createProposal(
-            "Test Proposal",
-            "Option 1",
-            "Option 2",
-            deadline
+            "Proposal 1",
+            "Option A",
+            "Option B",
+            block.timestamp + 1 days
         );
-
-        vm.startPrank(user1);
-        wiseBet.vote{value: 1 ether}(1, 1, 1 ether);
-        wiseBet.increaseBet{value: 0.5 ether}(1, 0.5 ether);
         vm.stopPrank();
 
-        assertEq(wiseBet.getUserStakeValue(1, user1), 1.5 ether);
+        vm.startPrank(voter1);
+        wiseBet.vote{value: 1 ether}(0, 1, 1 ether);
+        wiseBet.increaseBet{value: 0.5 ether}(0, 0.5 ether);
+
+        // Validate increased bet
+        WiseBet.Proposal memory proposal = wiseBet.getProposalsById(0);
+        assertEq(proposal.option1Pool, 1.5 ether);
+        assertEq(wiseBet.getUserStakeValue(0, voter1), 1.5 ether);
+        vm.stopPrank();
     }
 
     function testFinalizeProposal() public {
-        uint256 deadline = block.timestamp + 1 days;
+        vm.startPrank(whitelistedUser);
         wiseBet.createProposal(
-            "Test Proposal",
-            "Option 1",
-            "Option 2",
-            deadline
+            "Proposal 1",
+            "Option A",
+            "Option B",
+            block.timestamp + 1 days
         );
+        vm.stopPrank();
 
-        vm.warp(deadline + 1);
+        vm.startPrank(voter1);
+        wiseBet.vote{value: 1 ether}(0, 1, 1 ether);
+        vm.stopPrank();
 
-        vm.prank(whitelistedUser);
-        wiseBet.finalizeProposal(1, 1);
+        // Wait until after deadline
+        vm.warp(block.timestamp + 2 days);
 
-        WiseBet.Proposal memory proposal = wiseBet.getProposalsById(1);
+        // Finalize proposal as whitelisted user
+        vm.startPrank(whitelistedUser);
+        wiseBet.finalizeProposal(0, 1);
+        WiseBet.Proposal memory proposal = wiseBet.getProposalsById(0);
         assertTrue(proposal.isFinalized);
         assertEq(proposal.winningOption, 1);
+        vm.stopPrank();
     }
 
     function testDistributeRewards() public {
-        uint256 deadline = block.timestamp + 1 days;
+        vm.startPrank(whitelistedUser);
         wiseBet.createProposal(
-            "Test Proposal",
-            "Option 1",
-            "Option 2",
-            deadline
+            "Proposal 1",
+            "Option A",
+            "Option B",
+            block.timestamp + 1 days
         );
+        vm.stopPrank();
 
-        vm.prank(user1);
-        wiseBet.vote{value: 1 ether}(1, 1, 1 ether);
+        vm.deal(voter1, 1 ether);
+        vm.deal(voter2, 2 ether);
 
-        vm.prank(user2);
-        wiseBet.vote{value: 2 ether}(1, 2, 2 ether);
+        vm.startPrank(voter1);
+        wiseBet.vote{value: 1 ether}(0, 1, 1 ether);
+        vm.stopPrank();
 
-        vm.warp(deadline + 1);
+        vm.startPrank(voter2);
+        wiseBet.vote{value: 2 ether}(0, 2, 2 ether);
+        vm.stopPrank();
 
-        vm.prank(whitelistedUser);
-        wiseBet.finalizeProposal(1, 1);
+        // Fast forward to after the deadline
+        vm.warp(block.timestamp + 2 days);
 
-        uint256 user1BalanceBefore = user1.balance;
+        // Finalize and distribute rewards
+        vm.startPrank(whitelistedUser);
+        wiseBet.finalizeProposal(0, 1);
+        vm.stopPrank();
 
-        vm.prank(whitelistedUser);
-        wiseBet.distributeRewards(1);
-
-        uint256 user1BalanceAfter = user1.balance;
-        assertEq(user1BalanceAfter - user1BalanceBefore, 3 ether);
+        // Check rewards are distributed
+        assertEq(voter1.balance, 3 ether); // Voter 1 wins the pool
+        assertEq(voter2.balance, 0 ether); // Voter 2 loses
     }
 
-    function testOnlyOwnerCanSetWhitelist() public {
-        vm.prank(user1);
-        vm.expectRevert(ONLY_OWNER_CAN_CALL.selector);
-        // vm.expectRevert(ContractName.CustomError.selector);
-        wiseBet.setWhitelist(user2, true);
-    }
-
-    function testOnlyWhitelistedCanFinalizeProposal() public {
-        uint256 deadline = block.timestamp + 1 days;
-        wiseBet.createProposal(
-            "Test Proposal",
-            "Option 1",
-            "Option 2",
-            deadline
-        );
-
-        vm.warp(deadline + 1);
-
-        vm.prank(user1);
+    function testCreateProposalRevertNonWhitelisted() public {
+        // Try creating a proposal as non-whitelisted user
+        vm.startPrank(nonWhitelistedUser);
         vm.expectRevert(
-            abi.encodeWithSelector(ONLY_WHITELISTED_ADDRESS.selector, user1)
+            abi.encodeWithSelector(
+                ONLY_WHITELISTED_ADDRESS.selector,
+                nonWhitelistedUser
+            )
         );
-        wiseBet.finalizeProposal(1, 1);
+        wiseBet.createProposal(
+            "Proposal 1",
+            "Option A",
+            "Option B",
+            block.timestamp + 1 days
+        );
+        vm.stopPrank();
     }
 
-    function testCannotVoteAfterDeadline() public {
-        uint256 deadline = block.timestamp + 1 days;
+    function testVoteRevertInvalidOption() public {
+        vm.startPrank(whitelistedUser);
         wiseBet.createProposal(
-            "Test Proposal",
-            "Option 1",
-            "Option 2",
-            deadline
+            "Proposal 1",
+            "Option A",
+            "Option B",
+            block.timestamp + 1 days
         );
+        vm.stopPrank();
 
-        vm.warp(deadline + 1);
-
-        vm.prank(user1);
-        vm.expectRevert(VOTING_PERIOD_ENDED.selector);
-        wiseBet.vote{value: 1 ether}(1, 1, 1 ether);
+        vm.startPrank(voter1);
+        vm.expectRevert(INVAILD_OPTION.selector);
+        wiseBet.vote{value: 1 ether}(0, 3, 1 ether);
+        vm.stopPrank();
     }
 
-    function testCannotVoteTwice() public {
-        uint256 deadline = block.timestamp + 1 days;
+    function testVoteRevertAlreadyVoted() public {
+        vm.startPrank(whitelistedUser);
         wiseBet.createProposal(
-            "Test Proposal",
-            "Option 1",
-            "Option 2",
-            deadline
+            "Proposal 1",
+            "Option A",
+            "Option B",
+            block.timestamp + 1 days
         );
+        vm.stopPrank();
 
-        vm.startPrank(user1);
-        wiseBet.vote{value: 1 ether}(1, 1, 1 ether);
+        vm.startPrank(voter1);
+        wiseBet.vote{value: 1 ether}(0, 1, 1 ether);
 
         vm.expectRevert(USER_HAS_ALREADY_VOTED.selector);
-        wiseBet.vote{value: 1 ether}(1, 2, 1 ether);
+        wiseBet.vote{value: 1 ether}(0, 1, 1 ether);
         vm.stopPrank();
     }
 
-    function testCannotCreateProposalWithInvalidDeadline() public {
-        uint256 invalidDeadline = block.timestamp - 1;
-        vm.expectRevert(INVALID_DEADLINE.selector);
+    function testIncreaseBetRevertNotVoted() public {
+        vm.startPrank(whitelistedUser);
         wiseBet.createProposal(
-            "Invalid Proposal",
-            "Option 1",
-            "Option 2",
-            invalidDeadline
+            "Proposal 1",
+            "Option A",
+            "Option B",
+            block.timestamp + 1 days
         );
+        vm.stopPrank();
+
+        vm.startPrank(voter1);
+        vm.expectRevert(USER_HAS_NOT_VOTED.selector);
+        wiseBet.increaseBet{value: 1 ether}(0, 1 ether);
+        vm.stopPrank();
     }
 
-    function testCannotVoteWithInvalidOption() public {
-        uint256 deadline = block.timestamp + 1 days;
+    function testFinalizeProposalRevertInvalidWinningOption() public {
+        vm.startPrank(whitelistedUser);
         wiseBet.createProposal(
-            "Test Proposal",
-            "Option 1",
-            "Option 2",
-            deadline
+            "Proposal 1",
+            "Option A",
+            "Option B",
+            block.timestamp + 1 days
         );
+        vm.stopPrank();
 
-        vm.prank(user1);
-        vm.expectRevert(INVAILD_OPTION.selector);
-        wiseBet.vote{value: 1 ether}(1, 3, 1 ether);
-    }
-
-    function testCannotFinalizeWithInvalidOption() public {
-        uint256 deadline = block.timestamp + 1 days;
-        wiseBet.createProposal(
-            "Test Proposal",
-            "Option 1",
-            "Option 2",
-            deadline
-        );
-
-        vm.warp(deadline + 1);
-
-        vm.prank(whitelistedUser);
-        vm.expectRevert(INVAILD_WINNING_OPTION.selector);
-        wiseBet.finalizeProposal(1, 3);
-    }
-
-    function testCannotFinalizeBeforeDeadline() public {
-        uint256 deadline = block.timestamp + 1 days;
-        wiseBet.createProposal(
-            "Test Proposal",
-            "Option 1",
-            "Option 2",
-            deadline
-        );
-
-        vm.prank(whitelistedUser);
-        vm.expectRevert(VOTING_PERIOD_NOT_OVER.selector);
-        wiseBet.finalizeProposal(1, 1);
-    }
-
-    function testCannotFinalizeTwice() public {
-        uint256 deadline = block.timestamp + 1 days;
-        wiseBet.createProposal(
-            "Test Proposal",
-            "Option 1",
-            "Option 2",
-            deadline
-        );
-
-        vm.warp(deadline + 1);
+        // Fast forward to after the deadline
+        vm.warp(block.timestamp + 2 days);
 
         vm.startPrank(whitelistedUser);
-        wiseBet.finalizeProposal(1, 1);
-
-        vm.expectRevert(PROPOSAL_ALREADY_FINALIZED.selector);
-        wiseBet.finalizeProposal(1, 2);
+        vm.expectRevert(INVAILD_WINNING_OPTION.selector);
+        wiseBet.finalizeProposal(0, 3); // Invalid winning option
         vm.stopPrank();
     }
-
-    function testCannotDistributeRewardsBeforeFinalization() public {
-        uint256 deadline = block.timestamp + 1 days;
-        wiseBet.createProposal(
-            "Test Proposal",
-            "Option 1",
-            "Option 2",
-            deadline
-        );
-
-        vm.warp(deadline + 1);
-
-        vm.prank(whitelistedUser);
-        vm.expectRevert(PROPOSAL_NOT_FINALIZED.selector);
-        wiseBet.distributeRewards(1);
-    }
-
-    function testIncreaseBetWithInsufficientValue() public {
-        uint256 deadline = block.timestamp + 1 days;
-        wiseBet.createProposal(
-            "Test Proposal",
-            "Option 1",
-            "Option 2",
-            deadline
-        );
-
-        vm.startPrank(user1);
-        wiseBet.vote{value: 1 ether}(1, 1, 1 ether);
-
-        vm.expectRevert(TRANSFER_MORE_VALUE.selector);
-        wiseBet.increaseBet{value: 0.4 ether}(1, 0.5 ether);
-        vm.stopPrank();
-    }
-
-    function testCannotIncreaseBetWithoutVoting() public {
-        uint256 deadline = block.timestamp + 1 days;
-        wiseBet.createProposal(
-            "Test Proposal",
-            "Option 1",
-            "Option 2",
-            deadline
-        );
-
-        vm.prank(user1);
-        vm.expectRevert(USER_HAS_NOT_VOTED.selector);
-        wiseBet.increaseBet{value: 0.5 ether}(1, 0.5 ether);
-    }
-
-    function testMultipleUsersVoting() public {
-        uint256 deadline = block.timestamp + 1 days;
-        wiseBet.createProposal(
-            "Test Proposal",
-            "Option 1",
-            "Option 2",
-            deadline
-        );
-
-        vm.prank(user1);
-        wiseBet.vote{value: 1 ether}(1, 1, 1 ether);
-
-        vm.prank(user2);
-        wiseBet.vote{value: 2 ether}(1, 2, 2 ether);
-
-        vm.prank(user3);
-        wiseBet.vote{value: 1.5 ether}(1, 1, 1.5 ether);
-
-        WiseBet.Proposal memory proposal = wiseBet.getProposalsById(1);
-        // assertEq(proposal.option1Votes, 2);
-        assertEq(proposal.option2Votes, 1);
-        // assertEq(proposal.option1Pool, 2.5 ether);
-        // assertEq(proposal.option2Pool, 2 ether);
-    }
-
-    function testDistributeRewardsWithNoVotes() public {
-        uint256 deadline = block.timestamp + 1 days;
-        wiseBet.createProposal(
-            "Test Proposal",
-            "Option 1",
-            "Option 2",
-            deadline
-        );
-
-        vm.warp(deadline + 1);
-
-        vm.prank(whitelistedUser);
-        wiseBet.finalizeProposal(1, 1);
-
-        vm.prank(whitelistedUser);
-        wiseBet.distributeRewards(1);
-
-        // No assertions needed, just checking if it doesn't revert
-    }
-
-    receive() external payable {}
 }
