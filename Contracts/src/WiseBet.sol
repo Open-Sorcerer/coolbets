@@ -1,14 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import "forge-std/Test.sol";
+
 error INVALID_DEADLINE();
+error ONLY_OWNER_CAN_CALL();
 error VOTING_PERIOD_ENDED();
 error INVAILD_OPTION();
 error INVAILD_WINNING_OPTION();
 error USER_HAS_ALREADY_VOTED();
-error AMOUNT_IS_LOW();
+error TRANSFER_MORE_VALUE();
 error USER_HAS_NOT_VOTED();
-error ONLY_OWNER_CAN_CALL();
 error VOTING_PERIOD_NOT_OVER();
 error PROPOSAL_ALREADY_FINALIZED();
 error PROPOSAL_NOT_FINALIZED();
@@ -90,21 +92,21 @@ contract WiseBet {
         string memory _option1,
         string memory _option2,
         uint256 _deadline
-    ) external {
+    ) external onlyWhiteListed {
         if (_deadline <= block.timestamp) revert INVALID_DEADLINE();
-        ++proposalCount;
-        proposals[proposalCount] = Proposal(
-            _description,
-            _option1,
-            _option2,
-            _deadline,
-            0,
-            0,
-            0,
-            0,
-            false,
-            0
-        );
+        Proposal storage newProposal = proposals[proposalCount];
+
+        newProposal.description = _description;
+        newProposal.option1 = _option1;
+        newProposal.option2 = _option2;
+        newProposal.deadline = _deadline;
+        newProposal.option1Votes = 0;
+        newProposal.option2Votes = 0;
+        newProposal.option1Pool = 0;
+        newProposal.option2Pool = 0;
+        newProposal.isFinalized = false;
+        newProposal.winningOption = 0;
+
         emit ProposalCreated(
             proposalCount,
             _description,
@@ -112,6 +114,7 @@ contract WiseBet {
             _option2,
             _deadline
         );
+        ++proposalCount;
     }
 
     /// @notice function to call by user to vote on the proposal
@@ -120,9 +123,9 @@ contract WiseBet {
         uint256 _option,
         uint256 _amount
     ) external payable {
-        if (_amount < msg.value) revert AMOUNT_IS_LOW();
+        if (_amount > msg.value) revert TRANSFER_MORE_VALUE();
         Proposal memory proposal = proposals[_proposalId];
-        if (proposal.deadline < block.timestamp) revert VOTING_PERIOD_ENDED();
+        if (block.timestamp > proposal.deadline) revert VOTING_PERIOD_ENDED();
         if (_option != 1 && _option != 2) revert INVAILD_OPTION();
         if (userVoted[_proposalId][msg.sender]) revert USER_HAS_ALREADY_VOTED();
 
@@ -130,17 +133,23 @@ contract WiseBet {
         userStakes[_proposalId][msg.sender] = _amount;
         userOpinionSelected[_proposalId][msg.sender] = _option;
 
-        if (_option == 1) {
-            ++proposal.option1Votes;
-            proposal.option1Pool += _amount;
-            option1Users.push(msg.sender);
-        } else {
-            ++proposal.option2Votes;
-            proposal.option2Pool += _amount;
-            option2Users.push(msg.sender);
-        }
+        // if (_option == 1) {
+        //     ++proposal.option1Votes;
+        //     console.log("value of option1Votes", proposal.option1Votes);
+        //     proposal.option1Pool += _amount;
+        //     console.log("value of option1Pool", proposal.option1Pool);
+        //     option1Users.push(msg.sender);
+        // } else {
+        //     ++proposal.option2Votes;
+        //     console.log("value of option2Votes", proposal.option2Votes);
+        //     proposal.option2Pool += _amount;
+        //     console.log("value of option2Pool", proposal.option2Pool);
+        //     option2Users.push(msg.sender);
+        // }
 
-        emit VotePlaced(_proposalId, msg.sender, _option, _amount);
+        ++proposal.option1Votes;
+
+        // emit VotePlaced(_proposalId, msg.sender, _option, _amount);
     }
 
     /// @notice function to call if user wants to increase the bet on already selected opinion
@@ -148,9 +157,9 @@ contract WiseBet {
         uint256 _proposalId,
         uint256 _amount
     ) external payable {
-        if (_amount < msg.value) revert AMOUNT_IS_LOW();
+        if (_amount > msg.value) revert TRANSFER_MORE_VALUE();
         Proposal storage proposal = proposals[_proposalId];
-        if (proposal.deadline < block.timestamp) revert VOTING_PERIOD_ENDED();
+        if (block.timestamp > proposal.deadline) revert VOTING_PERIOD_ENDED();
 
         if (!userVoted[_proposalId][msg.sender]) revert USER_HAS_NOT_VOTED();
 
@@ -207,7 +216,7 @@ contract WiseBet {
 
                 emit RewardReceivedUser(user, userReward);
 
-                (bool success, ) = user.call{value: userReward}("");
+                (bool success, ) = payable(user).call{value: userReward}("");
                 if (!success) revert VALUE_NOT_TRANSFERED();
             }
         } else {
