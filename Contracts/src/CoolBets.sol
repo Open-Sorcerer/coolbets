@@ -1,127 +1,288 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import "forge-std/Test.sol";
+
+error INVALID_DEADLINE();
+error ONLY_OWNER_CAN_CALL();
+error VOTING_PERIOD_ENDED();
 error INVAILD_OPTION();
+error INVAILD_WINNING_OPTION();
+error USER_HAS_ALREADY_VOTED();
+error TRANSFER_MORE_VALUE();
+error USER_HAS_NOT_VOTED();
+error VOTING_PERIOD_NOT_OVER();
+error PROPOSAL_ALREADY_FINALIZED();
+error PROPOSAL_NOT_FINALIZED();
+error VALUE_NOT_TRANSFERED();
+error ONLY_WHITELISTED_ADDRESS(address caller);
 
 contract CoolBets {
-    address public owner;
-    uint256 public minimumBet;
-    uint256 public totalWinnings;
-    uint256 public deadline;
-    uint256 public proposalId;
+    uint256 private proposalCount;
+    address private i_owner;
 
     struct Proposal {
         string description;
-        string opinion1;
-        string opinion2;
-        uint256 votesForOpinion1;
-        uint256 votesForOpinion2;
+        string option1;
+        string option2;
         uint256 deadline;
-        mapping(address => uint256) userBets;
+        uint256 option1Votes;
+        uint256 option2Votes;
+        uint256 option1Pool;
+        uint256 option2Pool;
+        bool isFinalized;
+        uint256 winningOption;
     }
 
-    mapping(address => bool) public whitelist;
-    mapping(uint256 => Proposal) public proposals;
+    address[] private option1Users;
+    address[] private option2Users;
 
-    constructor(uint256 _minimumBet, uint256 _deadline) {
-        owner = msg.sender;
-        minimumBet = _minimumBet;
-        deadline = _deadline;
-    }
+    mapping(uint256 => Proposal) private proposals;
+    mapping(uint256 => mapping(address => bool)) private userVoted;
+    mapping(uint256 => mapping(address => uint256)) private userStakes;
+    mapping(uint256 => mapping(address => uint256)) private userOpinionSelected;
+    mapping(address => bool) private isWhitelisted;
+
+    event ProposalCreated(
+        uint256 indexed proposalId,
+        string description,
+        string option1,
+        string option2,
+        uint256 deadline
+    );
+    event VotePlaced(
+        uint256 indexed proposalId,
+        address indexed user,
+        uint256 option,
+        uint256 amount
+    );
+    event ProposalFinalized(uint256 indexed proposalId, uint256 winningOption);
+    event RewardsDistributed(uint256 indexed proposalId, uint256 totalRewards);
+    event RewardReceivedUser(address indexed user, uint256 amount);
 
     modifier onlyOwner() {
-        require(msg.sender == owner, "Only the owner can call this function.");
+        if (msg.sender != i_owner) revert ONLY_OWNER_CAN_CALL();
         _;
     }
 
-    modifier onlyWhitelisted() {
-        require(
-            whitelist[msg.sender],
-            "Only whitelisted addresses can call this function."
-        );
+    modifier onlyWhiteListed() {
+        if (!isWhitelisted[msg.sender])
+            revert ONLY_WHITELISTED_ADDRESS(msg.sender);
         _;
     }
 
-    function addWhitelistAddress(address _address) public onlyOwner {
-        whitelist[_address] = true;
+    constructor(address _owner) {
+        i_owner = _owner;
     }
 
-    function removeWhitelistAddress(address _address) public onlyOwner {
-        whitelist[_address] = false;
+    /// @notice function to set whitelisted addresses
+    function setWhitelist(address _whitelist, bool _value) external onlyOwner {
+        isWhitelisted[_whitelist] = _value;
     }
 
-    function changeMinimumBet(uint256 _minimumBet) public onlyWhitelisted {
-        minimumBet = _minimumBet;
-    }
-
+    /**
+     * @notice function to create Proposal
+     * @param _description description of the proposal
+     * @param _option1 description of first option
+     * @param _option2 description of second option
+     * @param _deadline deadline, when proposal will be over
+     */
     function createProposal(
         string memory _description,
-        string memory _opinion1,
-        string memory _opinion2,
+        string memory _option1,
+        string memory _option2,
         uint256 _deadline
-    ) public onlyWhitelisted {
-        Proposal storage newProposal = proposals[proposalId];
+    ) external onlyWhiteListed {
+        if (_deadline <= block.timestamp) revert INVALID_DEADLINE();
+        Proposal storage newProposal = proposals[proposalCount];
+
         newProposal.description = _description;
-        newProposal.opinion1 = _opinion1;
-        newProposal.opinion2 = _opinion2;
-        newProposal.votesForOpinion1 = 0;
-        newProposal.votesForOpinion2 = 0;
+        newProposal.option1 = _option1;
+        newProposal.option2 = _option2;
         newProposal.deadline = _deadline;
+        newProposal.option1Votes = 0;
+        newProposal.option2Votes = 0;
+        newProposal.option1Pool = 0;
+        newProposal.option2Pool = 0;
+        newProposal.isFinalized = false;
+        newProposal.winningOption = 0;
 
-        ++proposalId;
+        emit ProposalCreated(
+            proposalCount,
+            _description,
+            _option1,
+            _option2,
+            _deadline
+        );
+        ++proposalCount;
     }
 
-    function vote(uint256 _proposalId, uint256 _opinion) public payable {
-        if (_opinion != 1 && _opinion != 2) revert INVAILD_OPTION();
-        require(whitelist[msg.sender], "Only whitelisted addresses can vote.");
-        require(msg.value >= minimumBet, "Minimum bet amount not met.");
-
-        Proposal storage proposal = proposals[_proposalId];
-        require(block.timestamp < deadline, "Voting period has ended.");
-
-        proposal.userBets[msg.sender] += msg.value;
-
-        // if (_opinion == 1) {
-        //     proposal.votesForOpinion1 += msg.value;
-        // } else if (_opinion == 2) {
-        //     proposal.votesForOpinion2 += msg.value;
-        // }
-
-        _opinion == 1
-            ? proposal.votesForOpinion1 += msg.value
-            : proposal.votesForOpinion2 += msg.value;
-    }
-
-    function declareWinner(
+    /// @notice function to call by user to vote on the proposal
+    function vote(
         uint256 _proposalId,
-        uint256 _winningOpinion
-    ) public onlyWhitelisted {
-        require(
-            block.timestamp >= deadline,
-            "Voting period has not ended yet."
-        );
+        uint256 _option,
+        uint256 _amount
+    ) external payable {
+        if (_amount > msg.value) revert TRANSFER_MORE_VALUE();
 
         Proposal storage proposal = proposals[_proposalId];
-        require(
-            _winningOpinion == 1 || _winningOpinion == 2,
-            "Invalid winning opinion."
-        );
 
-        uint256 totalVotes = proposal.votesForOpinion1 +
-            proposal.votesForOpinion2;
-        require(totalVotes > 0, "No votes have been cast for this proposal.");
+        if (block.timestamp > proposal.deadline) revert VOTING_PERIOD_ENDED();
+        if (_option != 1 && _option != 2) revert INVAILD_OPTION();
+        if (userVoted[_proposalId][msg.sender]) revert USER_HAS_ALREADY_VOTED();
 
-        if (_winningOpinion == 1) {
-            totalWinnings = proposal.votesForOpinion2;
+        userVoted[_proposalId][msg.sender] = true;
+        userStakes[_proposalId][msg.sender] = _amount;
+        userOpinionSelected[_proposalId][msg.sender] = _option;
+
+        if (_option == 1) {
+            ++proposal.option1Votes;
+            console.log("value of option1Votes", proposal.option1Votes);
+            proposal.option1Pool += _amount;
+            console.log("value of option1Pool", proposal.option1Pool);
+            option1Users.push(msg.sender);
         } else {
-            totalWinnings = proposal.votesForOpinion1;
+            proposal.option2Votes += 1;
+            console.log("value of option2Votes", proposal.option2Votes);
+            proposal.option2Pool += _amount;
+            console.log("value of option2Pool", proposal.option2Pool);
+            option2Users.push(msg.sender);
         }
 
-        for (uint256 i = 0; i < totalVotes; i++) {
-            address user = msg.sender;
-            uint256 userBet = proposal.userBets[user];
-            uint256 userWinnings = (userBet * totalWinnings) / totalVotes;
-            payable(user).transfer(userWinnings);
+        emit VotePlaced(_proposalId, msg.sender, _option, _amount);
+    }
+
+    /// @notice function to call if user wants to increase the bet on already selected opinion
+    function increaseBet(
+        uint256 _proposalId,
+        uint256 _amount
+    ) external payable {
+        if (_amount > msg.value) revert TRANSFER_MORE_VALUE();
+        Proposal storage proposal = proposals[_proposalId];
+        if (block.timestamp > proposal.deadline) revert VOTING_PERIOD_ENDED();
+
+        if (!userVoted[_proposalId][msg.sender]) revert USER_HAS_NOT_VOTED();
+
+        userStakes[_proposalId][msg.sender] += _amount;
+        uint256 userOption = userOpinionSelected[_proposalId][msg.sender];
+
+        userOption == 1
+            ? proposal.option1Pool += _amount
+            : proposal.option2Pool += _amount;
+
+        emit VotePlaced(_proposalId, msg.sender, userOption, _amount);
+    }
+
+    /// @notice function to decide the winner
+    function finalizeProposal(
+        uint256 _proposalId,
+        uint256 _winningOption
+    ) external onlyWhiteListed {
+        Proposal storage proposal = proposals[_proposalId];
+        if (proposal.deadline > block.timestamp)
+            revert VOTING_PERIOD_NOT_OVER();
+        if (proposal.isFinalized) revert PROPOSAL_ALREADY_FINALIZED();
+        if (_winningOption != 1 && _winningOption != 2)
+            revert INVAILD_WINNING_OPTION();
+
+        proposal.isFinalized = true;
+        proposal.winningOption = _winningOption;
+
+        emit ProposalFinalized(_proposalId, _winningOption);
+
+        distributeRewards(_proposalId);
+    }
+
+    /// @notice function to distribute stake to the winners
+    function distributeRewards(uint256 _proposalId) private {
+        Proposal storage proposal = proposals[_proposalId];
+
+        if (!proposal.isFinalized) revert PROPOSAL_NOT_FINALIZED();
+
+        uint256 totalPool = proposal.option1Pool + proposal.option2Pool;
+        uint256 totalRewards;
+        address user;
+        uint256 userStake;
+        uint256 userReward;
+
+        if (proposal.winningOption == 1) {
+            for (uint256 i = 0; i < proposal.option1Votes; i++) {
+                user = option1Users[i];
+                userStake = userStakes[_proposalId][user];
+                userReward = (userStake * totalPool) / proposal.option1Pool;
+                totalRewards += userReward;
+
+                userStakes[_proposalId][user] = 0;
+
+                emit RewardReceivedUser(user, userReward);
+
+                (bool success, ) = payable(user).call{value: userReward}("");
+                if (!success) revert VALUE_NOT_TRANSFERED();
+            }
+        } else {
+            for (uint256 i = 0; i < proposal.option2Votes; i++) {
+                user = option2Users[i];
+                userStake = userStakes[_proposalId][user];
+                userReward = (userStake * totalPool) / proposal.option2Pool;
+                totalRewards += userReward;
+                userStakes[_proposalId][user] = 0;
+
+                emit RewardReceivedUser(user, userReward);
+
+                (bool success, ) = payable(user).call{value: userReward}("");
+                if (!success) revert VALUE_NOT_TRANSFERED();
+            }
+            emit RewardsDistributed(_proposalId, totalRewards);
         }
+    }
+
+    // -------------------------------------//
+    //      GETTER FUNCTION                 //
+    // -------------------------------------//
+
+    ///@notice function to check whether the user voted or not
+    function getUserVote(
+        uint256 _proposalId,
+        address _user
+    ) external view returns (bool) {
+        return userVoted[_proposalId][_user];
+    }
+
+    /// @notice function to get the stake / bet amount of user
+    function getUserStakeValue(
+        uint256 _proposalId,
+        address _user
+    ) external view returns (uint256) {
+        return userStakes[_proposalId][_user];
+    }
+
+    ///@notice function to get the owner of the contract
+    function getOwner() external view returns (address) {
+        return i_owner;
+    }
+
+    ///@notice function to get the proposal Count
+    function getProposalCount() external view returns (uint256) {
+        return proposalCount;
+    }
+
+    ///@notice function to get Proposal detail by proposal ID
+    function getProposalsById(
+        uint256 _id
+    ) external view returns (Proposal memory) {
+        return proposals[_id];
+    }
+
+    ///@notice function to get the user opinion
+    function getUserOpinion(
+        uint256 _id,
+        address _user
+    ) external view returns (uint256) {
+        return userOpinionSelected[_id][_user];
+    }
+
+    ///@notice function to check whether this address is whitelisted or not
+    function getWhitelisted(address _user) external view returns (bool) {
+        return isWhitelisted[_user];
     }
 }
