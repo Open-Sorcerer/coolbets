@@ -11,11 +11,12 @@ contract CoolBetsTest is Test {
     address nonWhitelistedUser = address(3);
     address voter1 = address(4);
     address voter2 = address(5);
+    address voter3 = address(6);
 
     function setUp() public {
         // Deploy CoolBets contract with owner address
         vm.startPrank(owner);
-        coolBet = new CoolBets(owner);
+        coolBet = new CoolBets();
         // Set up whitelisted users
         coolBet.setWhitelist(whitelistedUser, true);
         coolBet.setWhitelist(voter1, true);
@@ -23,6 +24,7 @@ contract CoolBetsTest is Test {
 
         vm.deal(voter1, 100 ether);
         vm.deal(voter2, 100 ether);
+        // vm.deal(voter3, 100 ether);
         vm.stopPrank();
     }
 
@@ -212,15 +214,20 @@ contract CoolBetsTest is Test {
         );
         vm.stopPrank();
 
-        vm.deal(voter1, 1 ether);
+        vm.deal(voter1, 3 ether);
         vm.deal(voter2, 2 ether);
+        vm.deal(voter3, 5 ether);
 
         vm.startPrank(voter1);
-        coolBet.vote{value: 1 ether}(0, 1, 1 ether);
+        coolBet.vote{value: 3 ether}(0, 1, 3 ether);
         vm.stopPrank();
 
         vm.startPrank(voter2);
-        coolBet.vote{value: 2 ether}(0, 2, 2 ether);
+        coolBet.vote{value: 2 ether}(0, 1, 2 ether);
+        vm.stopPrank();
+
+        vm.startPrank(voter3);
+        coolBet.vote{value: 5 ether}(0, 2, 5 ether);
         vm.stopPrank();
 
         // Fast forward to after the deadline
@@ -232,8 +239,9 @@ contract CoolBetsTest is Test {
         vm.stopPrank();
 
         // Check rewards are distributed
-        assertEq(voter1.balance, 3 ether); // Voter 1 wins the pool
-        assertEq(voter2.balance, 0 ether); // Voter 2 loses
+        assertEq(voter1.balance, 6 ether); // Voter 1 wins the pool
+        assertEq(voter2.balance, 4 ether); // Voter 2 wins the pool
+        assertEq(voter3.balance, 0 ether); // Voter 2 loses the pool
     }
 
     function testCreateProposalRevertNonWhitelisted() public {
