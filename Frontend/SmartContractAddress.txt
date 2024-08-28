@@ -1,4 +1,13 @@
-Rootstock scan link = https://explorer.testnet.rootstock.io/address/0xf2323d5d9e6903d40e47f80d2ed6785a6c3d7c2b
+Faucet Links
+
+Rootstock : https://faucet.rootstock.io/
+Chillz : https://dashboard.tatum.io/faucets
+
+-------------
+BetFactory.sol
+
+Rootstock scan link = https://explorer.testnet.rootstock.io/address/0xf2323d5d9e6903d40e47f80d2ed6785a6c3d7c2b?__tab=transactions&__ctab=general
+
 Rootstock contract address : 0xf2323D5D9e6903d40E47F80d2Ed6785a6c3d7c2B
 
 Chiliz scan link : https://chiliscan.com/address/0xE1486aa7d249cf84Ff532a7dbD424baa50Eb6d29
@@ -6,3 +15,20 @@ Chiliz contract address : 0xE1486aa7d249cf84Ff532a7dbD424baa50Eb6d29
 
 Morph L2 scan link : https://explorer-holesky.morphl2.io/address/0xE1486aa7d249cf84Ff532a7dbD424baa50Eb6d29
 Morph L2 contract address : 0xE1486aa7d249cf84Ff532a7dbD424baa50Eb6d29
+
+
+----------------
+
+CoolBets.sol
+
+Rootstock
+https://explorer.testnet.rootstock.io/address/0xe6a5267590ac048a599014a18815b9daf247eee7
+Contract address : 0xe6a5267590aC048a599014a18815b9DaF247eEE7
+
+Chillz
+https://chiliscan.com/address/0x6E84c2AF3393A2C85a6eA96765319040fd207f8a
+Contract address :0x6E84c2AF3393A2C85a6eA96765319040fd207f8a
+
+morphl2
+https://explorer-holesky.morphl2.io/address/0x6E84c2AF3393A2C85a6eA96765319040fd207f8a
+Contract address : 0x6E84c2AF3393A2C85a6eA96765319040fd207f8a
