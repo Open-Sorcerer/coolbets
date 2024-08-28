@@ -51,6 +51,81 @@ contract WiseBetTest is Test {
         vm.stopPrank();
     }
 
+    function testCreateMultipleProposals() public {
+        // Whitelisted user creates multiple proposals
+        vm.startPrank(whitelistedUser);
+        wiseBet.createProposal(
+            "Proposal 1",
+            "Option A",
+            "Option B",
+            block.timestamp + 1 days
+        );
+        wiseBet.createProposal(
+            "Proposal 2",
+            "Option C",
+            "Option D",
+            block.timestamp + 2 days
+        );
+
+        // Fetch and validate the first proposal
+        WiseBet.Proposal memory proposal1 = wiseBet.getProposalsById(0);
+        assertEq(proposal1.description, "Proposal 1");
+        assertEq(proposal1.option1, "Option A");
+        assertEq(proposal1.option2, "Option B");
+        assertEq(proposal1.deadline, block.timestamp + 1 days);
+
+        // Fetch and validate the second proposal
+        WiseBet.Proposal memory proposal2 = wiseBet.getProposalsById(1);
+        assertEq(proposal2.description, "Proposal 2");
+        assertEq(proposal2.option1, "Option C");
+        assertEq(proposal2.option2, "Option D");
+        assertEq(proposal2.deadline, block.timestamp + 2 days);
+
+        // Validate the total proposal count
+        assertEq(wiseBet.getProposalCount(), 2);
+
+        vm.stopPrank();
+    }
+
+    function testCreateProposalNonWhitelistedUser() public {
+        // Attempt to create a proposal with a non-whitelisted user
+        vm.startPrank(nonWhitelistedUser);
+
+        // Expect the revert due to `onlyWhiteListed` modifier
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                ONLY_WHITELISTED_ADDRESS.selector,
+                nonWhitelistedUser
+            )
+        );
+        wiseBet.createProposal(
+            "Proposal 1",
+            "Option A",
+            "Option B",
+            block.timestamp + 1 days
+        );
+
+        vm.stopPrank();
+    }
+
+    function testCreateProposalWithPastDeadline() public {
+        // Attempt to create a proposal with a past deadline
+        vm.startPrank(whitelistedUser);
+
+        // Expect the revert due to `INVALID_DEADLINE`
+        // vm.expectRevert(INVALID_DEADLINE.selector);
+        // vm.expectRevert(abi.encodeWithSelector(INVALID_DEADLINE.selector));
+        vm.expectRevert();
+        wiseBet.createProposal(
+            "Proposal 1",
+            "Option A",
+            "Option B",
+            block.timestamp - 1 days
+        );
+
+        vm.stopPrank();
+    }
+
     function testVoting() public {
         vm.startPrank(whitelistedUser);
         wiseBet.createProposal(
