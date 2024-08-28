@@ -124,7 +124,9 @@ contract WiseBet {
         uint256 _amount
     ) external payable {
         if (_amount > msg.value) revert TRANSFER_MORE_VALUE();
-        Proposal memory proposal = proposals[_proposalId];
+
+        Proposal storage proposal = proposals[_proposalId];
+
         if (block.timestamp > proposal.deadline) revert VOTING_PERIOD_ENDED();
         if (_option != 1 && _option != 2) revert INVAILD_OPTION();
         if (userVoted[_proposalId][msg.sender]) revert USER_HAS_ALREADY_VOTED();
@@ -133,23 +135,21 @@ contract WiseBet {
         userStakes[_proposalId][msg.sender] = _amount;
         userOpinionSelected[_proposalId][msg.sender] = _option;
 
-        // if (_option == 1) {
-        //     ++proposal.option1Votes;
-        //     console.log("value of option1Votes", proposal.option1Votes);
-        //     proposal.option1Pool += _amount;
-        //     console.log("value of option1Pool", proposal.option1Pool);
-        //     option1Users.push(msg.sender);
-        // } else {
-        //     ++proposal.option2Votes;
-        //     console.log("value of option2Votes", proposal.option2Votes);
-        //     proposal.option2Pool += _amount;
-        //     console.log("value of option2Pool", proposal.option2Pool);
-        //     option2Users.push(msg.sender);
-        // }
+        if (_option == 1) {
+            ++proposal.option1Votes;
+            console.log("value of option1Votes", proposal.option1Votes);
+            proposal.option1Pool += _amount;
+            console.log("value of option1Pool", proposal.option1Pool);
+            option1Users.push(msg.sender);
+        } else {
+            proposal.option2Votes += 1;
+            console.log("value of option2Votes", proposal.option2Votes);
+            proposal.option2Pool += _amount;
+            console.log("value of option2Pool", proposal.option2Pool);
+            option2Users.push(msg.sender);
+        }
 
-        ++proposal.option1Votes;
-
-        // emit VotePlaced(_proposalId, msg.sender, _option, _amount);
+        emit VotePlaced(_proposalId, msg.sender, _option, _amount);
     }
 
     /// @notice function to call if user wants to increase the bet on already selected opinion
@@ -166,11 +166,9 @@ contract WiseBet {
         userStakes[_proposalId][msg.sender] += _amount;
         uint256 userOption = userOpinionSelected[_proposalId][msg.sender];
 
-        if (userOption == 1) {
-            proposal.option1Pool += _amount;
-        } else {
-            proposal.option2Pool += _amount;
-        }
+        userOption == 1
+            ? proposal.option1Pool += _amount
+            : proposal.option2Pool += _amount;
 
         emit VotePlaced(_proposalId, msg.sender, userOption, _amount);
     }
@@ -191,10 +189,12 @@ contract WiseBet {
         proposal.winningOption = _winningOption;
 
         emit ProposalFinalized(_proposalId, _winningOption);
+
+        distributeRewards(_proposalId);
     }
 
     /// @notice function to distribute stake to the winners
-    function distributeRewards(uint256 _proposalId) external onlyWhiteListed {
+    function distributeRewards(uint256 _proposalId) private {
         Proposal storage proposal = proposals[_proposalId];
 
         if (!proposal.isFinalized) revert PROPOSAL_NOT_FINALIZED();
