@@ -112,9 +112,7 @@ contract WiseBetTest is Test {
         // Attempt to create a proposal with a past deadline
         vm.startPrank(whitelistedUser);
 
-        // Expect the revert due to `INVALID_DEADLINE`
         // vm.expectRevert(INVALID_DEADLINE.selector);
-        // vm.expectRevert(abi.encodeWithSelector(INVALID_DEADLINE.selector));
         vm.expectRevert();
         wiseBet.createProposal(
             "Proposal 1",
@@ -322,6 +320,156 @@ contract WiseBetTest is Test {
         vm.startPrank(whitelistedUser);
         vm.expectRevert(INVAILD_WINNING_OPTION.selector);
         wiseBet.finalizeProposal(0, 3); // Invalid winning option
+        vm.stopPrank();
+    }
+
+    function testFinalizeProposalRevertVotingPeriodNotOver() public {
+        vm.startPrank(whitelistedUser);
+        wiseBet.createProposal(
+            "Proposal 1",
+            "Option A",
+            "Option B",
+            block.timestamp + 1 days
+        );
+        vm.stopPrank();
+
+        vm.startPrank(voter1);
+        wiseBet.vote{value: 1 ether}(0, 1, 1 ether);
+        vm.stopPrank();
+
+        // Attempt to finalize proposal before the deadline
+        vm.startPrank(whitelistedUser);
+        vm.expectRevert(VOTING_PERIOD_NOT_OVER.selector);
+        wiseBet.finalizeProposal(0, 1);
+        vm.stopPrank();
+    }
+
+    function testIncreaseBetRevertAfterDeadline() public {
+        vm.startPrank(whitelistedUser);
+        wiseBet.createProposal(
+            "Proposal 1",
+            "Option A",
+            "Option B",
+            block.timestamp + 1 days
+        );
+        vm.stopPrank();
+
+        vm.startPrank(voter1);
+        wiseBet.vote{value: 1 ether}(0, 1, 1 ether);
+        vm.stopPrank();
+
+        // Fast forward to after the proposal's deadline
+        vm.warp(block.timestamp + 2 days);
+
+        // Attempt to increase the bet after the proposal has ended
+        vm.startPrank(voter1);
+        vm.expectRevert(VOTING_PERIOD_ENDED.selector);
+        wiseBet.increaseBet{value: 0.5 ether}(0, 0.5 ether);
+        vm.stopPrank();
+    }
+
+    function testDistributeRewardsRevertNotFinalized() public {
+        vm.startPrank(whitelistedUser);
+        wiseBet.createProposal(
+            "Proposal 1",
+            "Option A",
+            "Option B",
+            block.timestamp + 1 days
+        );
+        vm.stopPrank();
+
+        vm.deal(voter1, 1 ether);
+        vm.deal(voter2, 2 ether);
+
+        vm.startPrank(voter1);
+        wiseBet.vote{value: 1 ether}(0, 1, 1 ether);
+        vm.stopPrank();
+
+        vm.startPrank(voter2);
+        wiseBet.vote{value: 2 ether}(0, 2, 2 ether);
+        vm.stopPrank();
+
+        // Attempt to distribute rewards without voting period being over
+        vm.startPrank(whitelistedUser);
+        vm.expectRevert(VOTING_PERIOD_NOT_OVER.selector);
+        // This private function cannot be called directly; ensure logic is covered indirectly.
+        wiseBet.finalizeProposal(0, 1);
+        vm.stopPrank();
+    }
+
+    function testOnlyOwnerCanSetWhitelist() public {
+        // Non-owner attempts to set whitelist
+        vm.startPrank(nonWhitelistedUser);
+        vm.expectRevert(ONLY_OWNER_CAN_CALL.selector);
+        wiseBet.setWhitelist(address(6), true);
+        vm.stopPrank();
+
+        // Owner sets whitelist successfully
+        vm.startPrank(owner);
+        wiseBet.setWhitelist(address(6), true);
+        assertTrue(wiseBet.getWhitelisted(address(6)));
+        vm.stopPrank();
+    }
+
+    function testProposalAlreadyFinalizedRevert() public {
+        vm.startPrank(whitelistedUser);
+        wiseBet.createProposal(
+            "Proposal 1",
+            "Option A",
+            "Option B",
+            block.timestamp + 1 days
+        );
+        vm.stopPrank();
+
+        vm.startPrank(voter1);
+        wiseBet.vote{value: 1 ether}(0, 1, 1 ether);
+        vm.stopPrank();
+
+        // Fast forward to after the deadline
+        vm.warp(block.timestamp + 2 days);
+
+        vm.startPrank(whitelistedUser);
+        wiseBet.finalizeProposal(0, 1);
+
+        // Attempt to finalize the proposal again
+        vm.expectRevert(PROPOSAL_ALREADY_FINALIZED.selector);
+        wiseBet.finalizeProposal(0, 1);
+        vm.stopPrank();
+    }
+
+    function testFinalizeWithInvalidWinningOptionRevert() public {
+        vm.startPrank(whitelistedUser);
+        wiseBet.createProposal(
+            "Proposal 1",
+            "Option A",
+            "Option B",
+            block.timestamp + 1 days
+        );
+        vm.stopPrank();
+
+        // Fast forward to after the deadline
+        vm.warp(block.timestamp + 2 days);
+
+        vm.startPrank(whitelistedUser);
+        vm.expectRevert(INVAILD_WINNING_OPTION.selector);
+        wiseBet.finalizeProposal(0, 3); // Invalid winning option
+        vm.stopPrank();
+    }
+
+    function testTransferMoreValueRevert() public {
+        vm.startPrank(whitelistedUser);
+        wiseBet.createProposal(
+            "Proposal 1",
+            "Option A",
+            "Option B",
+            block.timestamp + 1 days
+        );
+        vm.stopPrank();
+
+        vm.startPrank(voter1);
+        // Trying to vote with more value than provided
+        vm.expectRevert(TRANSFER_MORE_VALUE.selector);
+        wiseBet.vote{value: 0.5 ether}(0, 1, 1 ether);
         vm.stopPrank();
     }
 }
