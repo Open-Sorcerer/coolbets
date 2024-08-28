@@ -71,8 +71,8 @@ contract CoolBets {
         _;
     }
 
-    constructor(address _owner) {
-        i_owner = _owner;
+    constructor() {
+        i_owner = msg.sender;
     }
 
     /// @notice function to set whitelisted addresses
