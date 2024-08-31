@@ -18,6 +18,7 @@ contract CoolBetsNFT is ERC721, Ownable {
         uint256 proposalId;
         uint256 opinion;
         uint256 betAmount;
+        string imageUrl;
     }
 
     mapping(uint256 => NFTData) private _tokenData;
@@ -28,18 +29,31 @@ contract CoolBetsNFT is ERC721, Ownable {
         string memory symbol
     ) ERC721(name, symbol) Ownable(msg.sender) {}
 
-    function mintNFT(
-        address recipient,
-        string memory name,
-        uint256 proposalId,
-        uint256 opinion,
-        uint256 betAmount
-    ) public onlyOwner returns (uint256) {
+    function mintNFT(bytes calldata data) public returns (uint256) {
+        (
+            address recipient,
+            string memory name,
+            uint256 proposalId,
+            uint256 opinion,
+            uint256 betAmount,
+            string memory imageUrl
+        ) = abi.decode(
+                data,
+                (address, string, uint256, uint256, uint256, string)
+            );
+
         ++_tokenIds;
+        _exists[_tokenIds] = true;
         uint256 newItemId = _tokenIds;
         _safeMint(recipient, newItemId);
 
-        _tokenData[newItemId] = NFTData(name, proposalId, opinion, betAmount);
+        _tokenData[newItemId] = NFTData(
+            name,
+            proposalId,
+            opinion,
+            betAmount,
+            imageUrl
+        );
 
         return newItemId;
     }
@@ -63,6 +77,9 @@ contract CoolBetsNFT is ERC721, Ownable {
                         data.name,
                         '",',
                         '"description": "On-chain NFT with custom data",',
+                        '"image": "',
+                        data.imageUrl,
+                        '",',
                         '"attributes": [',
                         '{"trait_type": "Proposal ID", "value": "',
                         data.proposalId.toString(),
@@ -91,5 +108,9 @@ contract CoolBetsNFT is ERC721, Ownable {
         // );
         if (!_exists[tokenId]) revert CoolBetsNFT__TokenDoesNotExist(tokenId);
         return _tokenData[tokenId];
+    }
+
+    function getCurrentTokenId() public view returns (uint256) {
+        return _tokenIds;
     }
 }
