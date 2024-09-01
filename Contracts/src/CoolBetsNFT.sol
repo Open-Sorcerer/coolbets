@@ -12,9 +12,12 @@ error CoolBetsNFT__OnlyWhitelisted();
 contract CoolBetsNFT is ERC721 {
     using Strings for uint256;
 
+    /// @dev The current token ID of NFT
     uint256 private tokenIds;
+    /// @dev The owner of the contract
     address private owner;
 
+    /// @dev The data structure of NFT
     struct NFTData {
         string name;
         uint256 proposalId;
@@ -23,20 +26,26 @@ contract CoolBetsNFT is ERC721 {
         string imageUrl;
     }
 
-    mapping(uint256 => NFTData) private _tokenData;
-    mapping(uint256 => bool) private _exists;
-    mapping(address => bool) private _whitelist;
+    /// @dev The mapping of token ID to NFT data
+    mapping(uint256 => NFTData) private tokenData;
+    /// @dev The mapping of token ID to existence. Check if the token ID exists
+    mapping(uint256 => bool) private exists;
+    /// @dev The mapping of address to whitelist status. Chcek if the address is whitelisted
+    mapping(address => bool) private whitelist;
 
+    /// @dev The modifier to check if the caller is the owner
     modifier onlyOwner() {
         if (msg.sender != owner) revert CoolBetsNFT__OnlyOwnerCanCall();
         _;
     }
 
+    /// @dev The modifier to check if the caller is whitelisted
     modifier onlyWhitelisted() {
-        if (!_whitelist[msg.sender]) revert CoolBetsNFT__OnlyWhitelisted();
+        if (!whitelist[msg.sender]) revert CoolBetsNFT__OnlyWhitelisted();
         _;
     }
 
+    /// @dev The constructor of the contract. Setting the name and Symbol of the NFT and owner of this contract
     constructor(
         string memory name,
         string memory symbol,
@@ -45,13 +54,15 @@ contract CoolBetsNFT is ERC721 {
         owner = _owner;
     }
 
+    /// @dev The function to set the whitelist status of the address
     function setWhitelistHook(
         address _whitelistHook,
         bool _value
     ) public onlyOwner {
-        _whitelist[_whitelistHook] = _value;
+        whitelist[_whitelistHook] = _value;
     }
 
+    /// @dev The function to mint NFT
     function mintNFT(
         bytes calldata data
     ) public onlyWhitelisted returns (uint256) {
@@ -68,11 +79,11 @@ contract CoolBetsNFT is ERC721 {
             );
 
         ++tokenIds;
-        _exists[tokenIds] = true;
+        exists[tokenIds] = true;
         uint256 newItemId = tokenIds;
         _safeMint(recipient, newItemId);
 
-        _tokenData[newItemId] = NFTData(
+        tokenData[newItemId] = NFTData(
             name,
             proposalId,
             opinion,
@@ -83,16 +94,13 @@ contract CoolBetsNFT is ERC721 {
         return newItemId;
     }
 
+    /// @dev The function to get the token URI
     function tokenURI(
         uint256 tokenId
     ) public view virtual override returns (string memory) {
-        // require(
-        //     _exists(tokenId),
-        //     "ERC721Metadata: URI query for nonexistent token"
-        // );
-        if (!_exists[tokenId]) revert CoolBetsNFT__TokenDoesNotExist(tokenId);
+        if (!exists[tokenId]) revert CoolBetsNFT__TokenDoesNotExist(tokenId);
 
-        NFTData memory data = _tokenData[tokenId];
+        NFTData memory data = tokenData[tokenId];
 
         string memory json = Base64.encode(
             bytes(
@@ -124,22 +132,30 @@ contract CoolBetsNFT is ERC721 {
         return string(abi.encodePacked("data:application/json;base64,", json));
     }
 
+    ///-----------------------------------//
+    ///  GETTER FUNCTIONS                 //
+    ///-----------------------------------//
+
+    /// @dev The function to get the token data
     function getTokenData(
         uint256 tokenId
     ) public view returns (NFTData memory) {
-        // require(
-        //     _exists(tokenId),
-        //     "ERC721Metadata: Query for nonexistent token"
-        // );
-        if (!_exists[tokenId]) revert CoolBetsNFT__TokenDoesNotExist(tokenId);
-        return _tokenData[tokenId];
+        if (!exists[tokenId]) revert CoolBetsNFT__TokenDoesNotExist(tokenId);
+        return tokenData[tokenId];
     }
 
+    /// @dev The function to get the current token ID
     function getCurrentTokenId() public view returns (uint256) {
         return tokenIds;
     }
 
+    /// @dev The function to get the owner of the contract
     function getOwner() public view returns (address) {
         return owner;
+    }
+
+    /// @dev The function to get the whitelist status of the address
+    function getWhitelistStatus(address _address) public view returns (bool) {
+        return whitelist[_address];
     }
 }
