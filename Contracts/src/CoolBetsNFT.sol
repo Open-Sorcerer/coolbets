@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/Strings.sol";
-import "@openzeppelin/contracts/utils/Base64.sol";
+import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
+import {Base64} from "@openzeppelin/contracts/utils/Base64.sol";
 
 error CoolBetsNFT__TokenDoesNotExist(uint256 tokenId);
 
-contract CoolBetsNFT is ERC721, Ownable {
+contract CoolBetsNFT is ERC721 {
     using Strings for uint256;
 
     uint256 private _tokenIds;
@@ -27,7 +26,7 @@ contract CoolBetsNFT is ERC721, Ownable {
     constructor(
         string memory name,
         string memory symbol
-    ) ERC721(name, symbol) Ownable(msg.sender) {}
+    ) ERC721(name, symbol) {}
 
     function mintNFT(bytes calldata data) public returns (uint256) {
         (
