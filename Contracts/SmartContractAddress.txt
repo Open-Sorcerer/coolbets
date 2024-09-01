@@ -32,3 +32,12 @@ Contract address :0x6E84c2AF3393A2C85a6eA96765319040fd207f8a
 morphl2
 https://explorer-holesky.morphl2.io/address/0x6E84c2AF3393A2C85a6eA96765319040fd207f8a
 Contract address : 0x6E84c2AF3393A2C85a6eA96765319040fd207f8a
+
+
+-------------------------
+
+BASE
+
+CoolBetsNFT deployed at: 0xE1486aa7d249cf84Ff532a7dbD424baa50Eb6d29
+WhitelistHook deployed at: 0xF2323D5d9E6903D40e47f80D2ED6785a6C3d7c2B
+CoolBets deployed at: 0x6E84c2AF3393A2C85a6eA96765319040fd207f8a
