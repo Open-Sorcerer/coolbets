@@ -6,11 +6,13 @@ import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {Base64} from "@openzeppelin/contracts/utils/Base64.sol";
 
 error CoolBetsNFT__TokenDoesNotExist(uint256 tokenId);
+error CoolBetsNFT__OnlyOwnerCanCall();
 
 contract CoolBetsNFT is ERC721 {
     using Strings for uint256;
 
-    uint256 private _tokenIds;
+    uint256 private tokenIds;
+    address private owner;
 
     struct NFTData {
         string name;
@@ -23,10 +25,18 @@ contract CoolBetsNFT is ERC721 {
     mapping(uint256 => NFTData) private _tokenData;
     mapping(uint256 => bool) private _exists;
 
+    modifier onlyOwner() {
+        require(msg.sender != owner, CoolBetsNFT__OnlyOwnerCanCall());
+        _;
+    }
+
     constructor(
         string memory name,
-        string memory symbol
-    ) ERC721(name, symbol) {}
+        string memory symbol,
+        address _owner
+    ) ERC721(name, symbol) {
+        owner = _owner;
+    }
 
     function mintNFT(bytes calldata data) public returns (uint256) {
         (
@@ -41,9 +51,9 @@ contract CoolBetsNFT is ERC721 {
                 (address, string, uint256, uint256, uint256, string)
             );
 
-        ++_tokenIds;
-        _exists[_tokenIds] = true;
-        uint256 newItemId = _tokenIds;
+        ++tokenIds;
+        _exists[tokenIds] = true;
+        uint256 newItemId = tokenIds;
         _safeMint(recipient, newItemId);
 
         _tokenData[newItemId] = NFTData(
@@ -110,6 +120,10 @@ contract CoolBetsNFT is ERC721 {
     }
 
     function getCurrentTokenId() public view returns (uint256) {
-        return _tokenIds;
+        return tokenIds;
+    }
+
+    function getOwner() public view returns (address) {
+        return owner;
     }
 }
