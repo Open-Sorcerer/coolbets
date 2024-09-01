@@ -7,6 +7,7 @@ import {Base64} from "@openzeppelin/contracts/utils/Base64.sol";
 
 error CoolBetsNFT__TokenDoesNotExist(uint256 tokenId);
 error CoolBetsNFT__OnlyOwnerCanCall();
+error CoolBetsNFT__OnlyWhitelisted();
 
 contract CoolBetsNFT is ERC721 {
     using Strings for uint256;
@@ -24,9 +25,15 @@ contract CoolBetsNFT is ERC721 {
 
     mapping(uint256 => NFTData) private _tokenData;
     mapping(uint256 => bool) private _exists;
+    mapping(address => bool) private _whitelist;
 
     modifier onlyOwner() {
-        require(msg.sender != owner, CoolBetsNFT__OnlyOwnerCanCall());
+        if (msg.sender != owner) revert CoolBetsNFT__OnlyOwnerCanCall();
+        _;
+    }
+
+    modifier onlyWhitelisted() {
+        if (!_whitelist[msg.sender]) revert CoolBetsNFT__OnlyWhitelisted();
         _;
     }
 
@@ -38,7 +45,16 @@ contract CoolBetsNFT is ERC721 {
         owner = _owner;
     }
 
-    function mintNFT(bytes calldata data) public returns (uint256) {
+    function setWhitelistHook(
+        address _whitelistHook,
+        bool _value
+    ) public onlyOwner {
+        _whitelist[_whitelistHook] = _value;
+    }
+
+    function mintNFT(
+        bytes calldata data
+    ) public onlyWhitelisted returns (uint256) {
         (
             address recipient,
             string memory name,
