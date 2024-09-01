@@ -26,3 +26,5 @@ contract DeployCoolBets is Script {
 // forge script script/CoolBets.s.sol --rpc-url $ROOTSTOCK_TESTNETWORK_RPC_URL --broadcast --legacy
 // forge script script/CoolBets.s.sol --rpc-url $CHILIZ_TESTNETWORK_RPC_URL --broadcast
 // forge script script/CoolBets.s.sol --rpc-url $MORPHL2_HOLESKY_RPC_URL --broadcast --legacy
+
+// forge script script/CoolBets.s.sol --rpc-url $BASE_SEPOLIA_RPC --broadcast --verify --etherscan-api-key $BASE_API_KEY
