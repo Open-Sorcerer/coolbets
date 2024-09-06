@@ -17,7 +17,7 @@ export default function Admin() {
   };
 
   return (
-    <main className="flex bg-darkAsh md:min-h-screen min-w-[25rem] max-w-[34rem] flex-col gap-10 items-center py-[5.5rem] px-5">
+    <main className="flex bg-darkAsh md:min-h-screen min-w-[25rem] md:min-w-[34rem] max-w-[34rem] flex-col gap-10 items-center py-[5.5rem] px-5">
       <div className="flex flex-col gap-3 w-full">
         <h3 className="text-2xl text-sky-300 font-medium mb-2">
           Create Contest

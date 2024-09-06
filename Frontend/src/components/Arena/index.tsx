@@ -17,7 +17,7 @@ const records = [
   },
 ];
 
-function Status({ status }: { status: "Live" | "Upcoming" | "Ended" }) {
+function Status({ status }: { status: "Live" | "Ended" }) {
   if (status === "Live") {
     return (
       <div className="flex items-center gap-3">
@@ -36,10 +36,10 @@ function HeaderSection({
   status,
   deadline,
 }: {
-  status: "Upcoming" | "Live" | "Ended";
+  status: "Live" | "Ended";
   deadline: Date;
 }) {
-  if (status === "Upcoming") {
+  if (status === "Live") {
     return (
       <span className="flex items-center gap-3 text-sm text-neutral-400">
         How to play
@@ -49,23 +49,25 @@ function HeaderSection({
           </SheetTrigger>
           <SheetContent side="bottom">
             <SheetHeader className="max-w-[30rem] md:mx-auto">
-              <SheetTitle>Welcome to Fans Arena 🎱</SheetTitle>
+              <SheetTitle className="text-blew">Welcome to Arena ⚔️</SheetTitle>
               <SheetDescription className="text-neutral-50">
-                To play, pick the caster you think will have the highest social
-                capital value (SCV) cast by the end of the round. Then, choose
-                the amount of $DEGEN you want to wager. The more you wager, the
-                bigger your share of the prize pool if your caster wins! <br />{" "}
-                <br />
-                Social capital value (SCV) is a measure of how much social
-                influence a cast has. The higher the SCV, the more influential
-                the cast. To promote a fair game, SCV is provided by our 3rd
-                party partner Airstack. <br /> <br />
-                There&apos;s no limit to how many picks you can make and how
-                much you can wager. <br /> <br />
-                Share your pick on Warpcast to earn 1% of what your referrals
-                wager, no matter if they win or lose! <br /> <br />
-                Coolbets takes a 5% fee from the prize pool, and up to 5% of the
-                prize pool is saved for our Referral Program.
+                <ol className="list-decimal pl-5 space-y-2">
+                  <li>Choose an event: Select an upcoming match or contest.</li>
+                  <li>Place your bet: Enter the amount you want to wager.</li>
+                  <li>
+                    Select your prediction: Choose the outcome you think will
+                    happen.
+                  </li>
+                  <li>Confirm your bet: Review and submit your wager.</li>
+                  <li>Watch the event: Follow the action live!</li>
+                  <li>
+                    Collect winnings: If your prediction is correct, your
+                    winnings will be credited to your account.
+                  </li>
+                </ol>
+                <p className="mt-4 text-amber-200">
+                  *Remember to bet responsibly and have fun!
+                </p>
               </SheetDescription>
             </SheetHeader>
           </SheetContent>
@@ -78,13 +80,11 @@ function HeaderSection({
 
 export default function Arena() {
   return (
-    <div className="flex flex-col gap-5 mt-7">
+    <div className="flex flex-col gap-5  w-full">
       <BattleContainer
-        status={<Status status="Upcoming" />}
+        status={<Status status="Live" />}
         deadline=""
-        headerSection={
-          <HeaderSection status="Upcoming" deadline={new Date()} />
-        }
+        headerSection={<HeaderSection status="Live" deadline={new Date()} />}
         records={
           records.map((record) => ({
             pfp: record.pfp,
