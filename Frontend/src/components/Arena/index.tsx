@@ -1,5 +1,4 @@
 import { InfoCircledIcon } from "@radix-ui/react-icons";
-import BattleContainer from "../BattleContainer";
 import {
   Sheet,
   SheetContent,
@@ -8,6 +7,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "../ui/sheet";
+import BetContainer from "../BetContainer";
 
 const records = [
   {
@@ -32,13 +32,7 @@ function Status({ status }: { status: "Live" | "Ended" }) {
   return <h1 className="text-lg font-medium uppercase">{status}</h1>;
 }
 
-function HeaderSection({
-  status,
-  deadline,
-}: {
-  status: "Live" | "Ended";
-  deadline: Date;
-}) {
+function HeaderSection({ status }: { status: "Live" | "Ended" }) {
   if (status === "Live") {
     return (
       <span className="flex items-center gap-3 text-sm text-neutral-400">
@@ -49,7 +43,9 @@ function HeaderSection({
           </SheetTrigger>
           <SheetContent side="bottom">
             <SheetHeader className="max-w-[30rem] md:mx-auto">
-              <SheetTitle className="text-lavender">Welcome to Arena ⚔️</SheetTitle>
+              <SheetTitle className="text-lavender">
+                Welcome to Arena ⚔️
+              </SheetTitle>
               <SheetDescription className="text-neutral-50">
                 <ol className="list-decimal pl-5 space-y-2">
                   <li>Choose an event: Select an upcoming match or contest.</li>
@@ -80,21 +76,12 @@ function HeaderSection({
 
 export default function Arena() {
   return (
-    <div className="flex flex-col gap-5  w-full">
-      <BattleContainer
-        status={<Status status="Live" />}
-        deadline=""
-        headerSection={<HeaderSection status="Live" deadline={new Date()} />}
-        records={
-          records.map((record) => ({
-            pfp: record.pfp,
-            username: record.username,
-            amount: record.amount,
-          })) ?? []
-        }
-        contestId={123}
-        type="upcoming"
-      />
+    <div className="flex flex-col gap-5 w-full">
+      <div className="flex items-center justify-between">
+        <Status status="Live" />
+        <HeaderSection status="Live" />
+      </div>
+      <BetContainer />
     </div>
   );
 }
