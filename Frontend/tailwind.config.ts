@@ -50,7 +50,7 @@ const config: Config = {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
         },
-        blew: "hsl(var(--blew))",
+        lavender: "hsl(var(--lavender))",
         ash: "hsl(var(--ash))",
         darkAsh: "hsl(var(--dark-ash))",
         border: "hsl(var(--border))",

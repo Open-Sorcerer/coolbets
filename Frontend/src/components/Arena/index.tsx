@@ -49,7 +49,7 @@ function HeaderSection({
           </SheetTrigger>
           <SheetContent side="bottom">
             <SheetHeader className="max-w-[30rem] md:mx-auto">
-              <SheetTitle className="text-blew">Welcome to Arena ⚔️</SheetTitle>
+              <SheetTitle className="text-lavender">Welcome to Arena ⚔️</SheetTitle>
               <SheetDescription className="text-neutral-50">
                 <ol className="list-decimal pl-5 space-y-2">
                   <li>Choose an event: Select an upcoming match or contest.</li>
