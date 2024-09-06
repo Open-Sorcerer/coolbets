@@ -1,7 +1,4 @@
 import { Avatar, AvatarImage } from "../ui/avatar";
-import { useQuery } from "@tanstack/react-query";
-import { TContestDetails } from "@/lib/types";
-import { getContestDetails } from "@/lib/helpers";
 import BetDrawer from "../BetDrawer";
 import { formatLargeNumber } from "@/lib/utils";
 
@@ -26,13 +23,6 @@ export default function BattleContainer({
   type,
   contestId,
 }: BattleContainerProps) {
-  const { data } = useQuery<{ contestDetails: TContestDetails, bet: bigint[] }>({
-    queryKey: ['contestDetails', contestId],
-    queryFn: () => getContestDetails(contestId) as Promise<{ contestDetails: TContestDetails, bet: bigint[] }>,
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
-    staleTime: 0,
-  });
 
   return (
     <div className="flex flex-col gap-5">
@@ -47,7 +37,7 @@ export default function BattleContainer({
         <span className="flex flex-col w-full bg-ash p-5 rounded-xl mb-2">
           <p className="text-sm text-neutral-500">Prize Pool 💰</p>
           <h1 className="text-2xl text-sky-300 font-medium">
-            {Number(data?.contestDetails?.totalPoolAmount ?? 0)}
+            3434
           </h1>
           <p className="text-sm font-medium text-neutral-300">$MOXIE</p>
         </span>
@@ -62,7 +52,7 @@ export default function BattleContainer({
                   src={record.pfp ?? "https://github.com/shadcn.png"}
                 />
               </Avatar>
-              <h1 className="text-sm text-cream font-medium overflow-hidden text-ellipsis">
+              <h1 className="text-sm text-amber-300 font-medium overflow-hidden text-ellipsis">
                 {record.username}
               </h1>
             </span>
@@ -75,9 +65,9 @@ export default function BattleContainer({
                   </span>
                 </div>
                 <h1 className="text-lg text-sky-300 font-medium">
-                  {Number(data?.contestDetails?.poolAmount[index] ?? 0)} MOXIE
+                  2345 MOXIE
                 </h1>
-                <span className='text-sm text-neutral-200'>{Number(data?.bet[index] ?? 0)} {Number(data?.bet[index] ?? 0) === 1 ? 'bet' : 'bets'}</span>
+                <span className='text-sm text-neutral-200'>350 bets</span>
               </div>
               {type === "upcoming" && (
                 <BetDrawer
@@ -85,7 +75,7 @@ export default function BattleContainer({
                   record={record}
                   contestId={contestId}
                   deadline={deadline}
-                  contestDetails={data?.contestDetails as TContestDetails}
+                  contestDetails={""}
                 />
               )}
             </div>
