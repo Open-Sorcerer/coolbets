@@ -20,7 +20,7 @@ export default function Admin() {
     <main className="flex bg-darkAsh md:min-h-screen min-w-[25rem] max-w-[34rem] flex-col gap-10 items-center py-[5.5rem] px-5">
       <div className="flex flex-col gap-3 w-full">
         <h3 className="text-2xl text-sky-300 font-medium mb-2">
-          Enter contestants
+          Create Contest
         </h3>
         <Input
           placeholder="Contest Name"
@@ -33,7 +33,7 @@ export default function Admin() {
       </div>
       <div className="flex flex-col gap-3 w-full">
         <h3 className="text-2xl text-sky-300 font-medium mb-2">
-          Announce Winner
+          Declare Results
         </h3>
         <Input
           placeholder="Type FID"
