@@ -515,3 +515,82 @@ export const ABI = [
     type: "function",
   },
 ];
+
+export const whiteListABI = [
+  {
+    type: "constructor",
+    inputs: [
+      {
+        name: "_CoolBetsNftAddr",
+        type: "address",
+        internalType: "address",
+      },
+    ],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "coolBetsNFT",
+    inputs: [],
+    outputs: [
+      {
+        name: "",
+        type: "address",
+        internalType: "contract ICoolBetsNFT",
+      },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "didReceiveAttestation",
+    inputs: [
+      { name: "attester", type: "address", internalType: "address" },
+      { name: "", type: "uint64", internalType: "uint64" },
+      { name: "", type: "uint64", internalType: "uint64" },
+      { name: "data", type: "bytes", internalType: "bytes" },
+    ],
+    outputs: [],
+    stateMutability: "payable",
+  },
+  {
+    type: "function",
+    name: "didReceiveAttestation",
+    inputs: [
+      { name: "attester", type: "address", internalType: "address" },
+      { name: "", type: "uint64", internalType: "uint64" },
+      { name: "", type: "uint64", internalType: "uint64" },
+      { name: "", type: "address", internalType: "contract IERC20" },
+      { name: "", type: "uint256", internalType: "uint256" },
+      { name: "data", type: "bytes", internalType: "bytes" },
+    ],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "didReceiveRevocation",
+    inputs: [
+      { name: "attester", type: "address", internalType: "address" },
+      { name: "", type: "uint64", internalType: "uint64" },
+      { name: "", type: "uint64", internalType: "uint64" },
+      { name: "data", type: "bytes", internalType: "bytes" },
+    ],
+    outputs: [],
+    stateMutability: "payable",
+  },
+  {
+    type: "function",
+    name: "didReceiveRevocation",
+    inputs: [
+      { name: "attester", type: "address", internalType: "address" },
+      { name: "", type: "uint64", internalType: "uint64" },
+      { name: "", type: "uint64", internalType: "uint64" },
+      { name: "", type: "address", internalType: "contract IERC20" },
+      { name: "", type: "uint256", internalType: "uint256" },
+      { name: "data", type: "bytes", internalType: "bytes" },
+    ],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+];

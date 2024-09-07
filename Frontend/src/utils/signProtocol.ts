@@ -3,6 +3,7 @@ import { ethers } from "ethers";
 import { privateKeyToAccount } from "viem/accounts";
 
 import axios from "axios";
+import { whiteListABI } from "./contracts";
 
 const privateKey = process.env.NEXT_PUBLIC_PRIVATE_KEY!;
 
@@ -35,7 +36,12 @@ async function createSchema() {
 
 // Create an Attestation
 
-async function createNotaryAttestation(Description: string, Bet: string, Amount: string, attestingTo: string) {
+async function createNotaryAttestation(
+  Description: string,
+  Bet: string,
+  Amount: string,
+  attestingTo: string,
+) {
   console.log("Creating Attestation");
   const res = await client.createAttestation({
     schemaId: schemaId,
@@ -48,6 +54,25 @@ async function createNotaryAttestation(Description: string, Bet: string, Amount:
     recipients: [attestingTo.toLowerCase()],
   });
   console.log("Attestation created", res);
+
+  const CONTRACT_ADDRESS = "0xF2323D5d9E6903D40e47f80D2ED6785a6C3d7c2B";
+  const nft_provider = new ethers.providers.JsonRpcProvider("https://rpc.ankr.com/base_sepolia");
+
+  const ABI = whiteListABI;
+
+  const contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, attesterWallet.connect(nft_provider));
+
+  console.log("Contract", contract);
+
+  const data = "data";
+
+  const tx = await contract.didReceiveAttestation(
+    attestingTo.toLowerCase(),
+    res.attestationId,
+    "0x227",
+    data,
+  );
+
   return res.attestationId;
 }
 
