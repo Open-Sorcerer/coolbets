@@ -2,11 +2,11 @@ import React, { SetStateAction, useEffect, useState } from "react";
 import { BsPeopleFill } from "react-icons/bs";
 import { GiSandsOfTime } from "react-icons/gi";
 import Input from "../form/input";
-import { useAccount, useWaitForTransactionReceipt, useWriteContract } from "wagmi";
-import { parseEther } from "viem";
+import { useAccount, useBalance, useWaitForTransactionReceipt, useWriteContract } from "wagmi";
+import { formatEther, parseEther } from "viem";
 import toast from "react-hot-toast";
-import { zkSyncSepoliaTestnet } from "viem/zksync";
 import { baseSepolia } from "viem/chains";
+import { ABI, coolBetContracts } from "@/utils/contracts";
 
 interface CardProps {
   description: string;
@@ -15,31 +15,37 @@ interface CardProps {
   option2: string;
   deadline: string;
   id: number;
-  ethPrice: number;
 }
 
-export default function Card({ description, votes, option1, option2, deadline, id, ethPrice }: CardProps) {
+export default function Card({ description, votes, option1, option2, deadline, id }: CardProps) {
   const [bet, setBet] = useState<number>(0);
   const [trade, setTrade] = useState<boolean>(false);
   const [option, setOption] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const { address, chain } = useAccount();
+  const { data: balance } = useBalance({ address });
   const { data, writeContractAsync, status } = useWriteContract();
   const { isSuccess, status: isValid } = useWaitForTransactionReceipt({
     hash: data,
   });
 
   const placeBet = async () => {
+    if (!balance || parseFloat(formatEther(balance.value)) < bet) {
+      toast.error("Insufficient balance", {
+        style: { borderRadius: "10px" },
+      });
+      return;
+    }
     setIsLoading(true);
-    // writeContractAsync({
-    //   account: address,
-    //   address: opinionTradingContracts[chain?.id as keyof typeof opinionTradingContracts]
-    //     ?.contract as `0x${string}`,
-    //   abi: chain?.id === zkSyncSepoliaTestnet.id ? zkSyncOpinionTradingABI : opinionTradingABI,
-    //   functionName: "vote",
-    //   args: [id, option === option1 ? 1 : 2, 0, parseEther(bet.toString())],
-    //   value: parseEther(bet.toString()),
-    // });
+    writeContractAsync({
+      account: address,
+      address: coolBetContracts[chain?.id as keyof typeof coolBetContracts]
+        ?.contract as `0x${string}`,
+      abi: ABI,
+      functionName: "vote",
+      args: [id, option === option1 ? 1 : 2, parseEther(bet.toString())],
+      value: parseEther(bet.toString()),
+    });
   };
 
   useEffect(() => {
@@ -142,7 +148,7 @@ export default function Card({ description, votes, option1, option2, deadline, i
           <Input
             id="bet"
             name="bet"
-            placeholder="0.005 ETH"
+            placeholder={`0.005 ${chain?.nativeCurrency?.symbol}`}
             type="number"
             onChange={(e: { target: { value: SetStateAction<number> } }) => setBet(e.target.value)}
           />
@@ -151,13 +157,7 @@ export default function Card({ description, votes, option1, option2, deadline, i
             className="w-full text-neutral-100 bg-violet-500 hover:bg-violet-600 rounded-lg px-5 py-2.5 text-center font-medium shadow disabled:opacity-75 disabled:cursor-progress"
             disabled={isLoading}
           >
-            {isLoading ? (
-              "Placing order..."
-            ) : (
-              <p>
-                Bet {option} {bet > 0 && `(${(bet * ethPrice).toFixed(2)} USD)`}
-              </p>
-            )}
+            {isLoading ? "Placing order..." : <p>Bet {option}</p>}
           </button>
         </div>
       )}

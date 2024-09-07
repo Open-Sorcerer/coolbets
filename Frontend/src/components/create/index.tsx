@@ -1,10 +1,10 @@
 "use client";
 
 import { Input } from "@/components";
+import { ABI, coolBetContracts } from "@/utils/contracts";
 import { SetStateAction, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useAccount, useWaitForTransactionReceipt, useWriteContract } from "wagmi";
-import { zkSyncSepoliaTestnet } from "viem/zksync";
 
 export default function CreateCampaign() {
   const [deadline, setDeadline] = useState<string>("");
@@ -29,17 +29,17 @@ export default function CreateCampaign() {
     return timestamp;
   }
 
-  // const createProposal = async () => {
-  //   setIsLoading(true);
-  //   writeContractAsync({
-  //     account: address,
-  //     address: opinionTradingContracts[chain?.id as keyof typeof opinionTradingContracts]
-  //       ?.contract as `0x${string}`,
-  //     abi: chain?.id === zkSyncSepoliaTestnet.id ? zkSyncOpinionTradingABI : opinionTradingABI,
-  //     functionName: "createProposal",
-  //     args: [description, option1, option2, formatTimestamp(deadline)],
-  //   });
-  // };
+  const createProposal = async () => {
+    setIsLoading(true);
+    writeContractAsync({
+      account: address,
+      address: coolBetContracts[chain?.id as keyof typeof coolBetContracts]
+        ?.contract as `0x${string}`,
+      abi: ABI,
+      functionName: "createProposal",
+      args: [description, option1, option2, formatTimestamp(deadline)],
+    });
+  };
 
   useEffect(() => {
     if (status === "success" && isSuccess && isValid === "success") {
@@ -135,7 +135,7 @@ export default function CreateCampaign() {
               onClick={async (e) => {
                 e.preventDefault();
                 if (deadline && description && option1 && option2) {
-                  // createProposal();
+                  createProposal();
                 } else {
                   toast.error("Please fill all the fields", {
                     style: {
