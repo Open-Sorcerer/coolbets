@@ -7,6 +7,7 @@ import { formatEther, parseEther } from "viem";
 import toast from "react-hot-toast";
 import { baseSepolia } from "viem/chains";
 import { ABI, coolBetContracts } from "@/utils/contracts";
+import { createNotaryAttestation } from "@/utils/signProtocol";
 
 interface CardProps {
   description: string;
@@ -56,6 +57,7 @@ export default function Card({ description, votes, option1, option2, deadline, i
           borderRadius: "10px",
         },
       });
+      // createNotaryAttestation(option, bet.toString(), address as `0x${string}`);
     } else if (status === "error") {
       setIsLoading(false);
       toast.error("Something went wrong", {
