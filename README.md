@@ -1,4 +1,4 @@
-# Welcome to Coolbets 💰
+# Welcome to Coolbets 💰 
 
 <p align="center">
   <a href="https://coolbets.vercel.app">
