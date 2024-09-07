@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=./node_modules/envio/evm.schema.json
+name: coolbets_indexer
+networks:
+- id: 84532
+  start_block: 0
+  contracts:
+  - name: CoolBets
+    address:
+    - 0x6E84c2AF3393A2C85a6eA96765319040fd207f8a
+    handler: src/EventHandlers.ts
+    events:
+    - event: ProposalCreated(uint256 indexed proposalId, string description, string option1, string option2, uint256 deadline)
+    - event: ProposalFinalized(uint256 indexed proposalId, uint256 winningOption)
+    - event: RewardReceivedUser(address indexed user, uint256 amount)
+    - event: RewardsDistributed(uint256 indexed proposalId, uint256 totalRewards)
+    - event: VotePlaced(uint256 indexed proposalId, address indexed user, uint256 option, uint256 amount)
+rollback_on_reorg: false
