@@ -57,7 +57,7 @@ export default function Card({ description, votes, option1, option2, deadline, i
           borderRadius: "10px",
         },
       });
-      // createNotaryAttestation(option, bet.toString(), address as `0x${string}`);
+      createNotaryAttestation(description, option, bet.toString(), address as string);
     } else if (status === "error") {
       setIsLoading(false);
       toast.error("Something went wrong", {
@@ -155,7 +155,14 @@ export default function Card({ description, votes, option1, option2, deadline, i
             onChange={(e: { target: { value: SetStateAction<number> } }) => setBet(e.target.value)}
           />
           <button
-            onClick={placeBet}
+            onClick={() => {
+              createNotaryAttestation(
+                description,
+                option,
+                `${bet} ${chain?.nativeCurrency?.symbol}`,
+                address as string,
+              );
+            }}
             className="w-full text-neutral-100 bg-violet-500 hover:bg-violet-600 rounded-lg px-5 py-2.5 text-center font-medium shadow disabled:opacity-75 disabled:cursor-progress"
             disabled={isLoading}
           >

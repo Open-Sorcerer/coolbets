@@ -8,7 +8,7 @@ const privateKey = process.env.NEXT_PUBLIC_PRIVATE_KEY!;
 
 const attesterWallet = new ethers.Wallet(privateKey);
 
-let schemaId = "0xdc";
+let schemaId = "0x227";
 
 //@ts-ignore
 const signer = privateKeyToAccount(attesterWallet.privateKey);
@@ -35,19 +35,20 @@ async function createSchema() {
 
 // Create an Attestation
 
-async function createNotaryAttestation(opinion: string, betAmount: string, attestingTo: string) {
+async function createNotaryAttestation(Description: string, Bet: string, Amount: string, attestingTo: string) {
   console.log("Creating Attestation");
   const res = await client.createAttestation({
     schemaId: schemaId,
     data: {
-      opinion,
-      betAmount,
+      Description,
+      Bet,
+      Amount,
     },
     indexingValue: attestingTo.toLowerCase(),
     recipients: [attestingTo.toLowerCase()],
   });
-
-  return res;
+  console.log("Attestation created", res);
+  return res.attestationId;
 }
 
 // Generate a function for making requests to the Sign Protocol Indexing Service
