@@ -1,15 +1,13 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import "react-toastify/dist/ReactToastify.css";
-import { Slide, ToastContainer } from "react-toastify";
-import Navbar from "@/components/Navbar";
+import Providers from "./providers";
+import { Navbar } from "@/components";
+import { Toaster } from "react-hot-toast";
 
 export const metadata: Metadata = {
   title: "Coolbets",
-  description: "Coolbets",
-  icons: {
-    icon: "/coolbets.svg",
-  },
+  description: "Trade your opinions on multiple chains",
+  icons: "/coolbets.svg",
 };
 
 export default function RootLayout({
@@ -19,22 +17,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="max-w-[34rem] mx-auto">
-        <Navbar />
-        {children}
-        <ToastContainer
-          position="top-right"
-          autoClose={3000}
-          hideProgressBar={false}
-          newestOnTop={false}
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-          theme="dark"
-          transition={Slide}
-        />
+      <body className="bg-gradient-radial from-[#fff2dd] via-[#fef3e1] to-[#fef3e1]">
+        <Providers>
+          <Navbar />
+          {children}
+        </Providers>
+        <Toaster position="bottom-center" />
       </body>
     </html>
   );
