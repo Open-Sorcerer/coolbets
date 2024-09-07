@@ -25,10 +25,10 @@ export default function Card({ description, votes, option1, option2, deadline, i
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const { address, chain } = useAccount();
   const { data: balance } = useBalance({ address });
-  const { data, writeContractAsync, status } = useWriteContract();
-  const { isSuccess, status: isValid } = useWaitForTransactionReceipt({
-    hash: data,
-  });
+  const { data, writeContractAsync, status, isSuccess } = useWriteContract();
+  // const { isSuccess, status: isValid } = useWaitForTransactionReceipt({
+  //   hash: data,
+  // });
 
   const placeBet = async () => {
     if (!balance || parseFloat(formatEther(balance.value)) < bet) {
@@ -50,19 +50,32 @@ export default function Card({ description, votes, option1, option2, deadline, i
   };
 
   useEffect(() => {
-    if (status === "success" && isSuccess && isValid === "success") {
+    if (status === "success" && isSuccess) {
       setIsLoading(false);
       toast.success("Bet Placed Successfully", {
         style: {
           borderRadius: "10px",
         },
       });
-      createNotaryAttestation(
-        description,
-        option,
-        `${bet} ${chain?.nativeCurrency?.symbol}`,
-        address as string,
-      );
+      const createAttestation = async () => {
+        const data = await createNotaryAttestation(
+          description,
+          option,
+          `${bet} ${chain?.nativeCurrency?.symbol}`,
+          address as string,
+        );
+        toast.success(
+          <a href={`https://testnet-scan.sign.global/attestation/onchain_evm_84532_${data}`} target="_blank">
+            Attestation Created Successfully
+          </a>,
+          {
+            style: {
+              borderRadius: "10px",
+          },
+          duration: 10000
+        });
+      };
+      createAttestation();
     } else if (status === "error") {
       setIsLoading(false);
       toast.error("Something went wrong", {
@@ -71,7 +84,7 @@ export default function Card({ description, votes, option1, option2, deadline, i
         },
       });
     }
-  }, [status, isSuccess, isValid]);
+  }, [isSuccess, status]);
 
   return (
     <div className="flex flex-col w-[25rem] h-[14rem] bg-white bg-opacity-40 border border-neutral-100 backdrop-filter backdrop-blur-sm rounded-xl shadow-md p-6 justify-between">
