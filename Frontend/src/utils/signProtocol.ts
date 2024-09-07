@@ -1,8 +1,12 @@
 import { SignProtocolClient, SpMode, EvmChains } from "@ethsign/sp-sdk";
-import { ethers } from "ethers";
 import { privateKeyToAccount } from "viem/accounts";
+import { encodeAbiParameters } from "viem";
 
 import axios from "axios";
+import { whiteListABI } from "./contracts";
+import { createPublicClient, createWalletClient, getContract, http } from "viem";
+import { baseSepolia } from "viem/chains";
+import { ethers } from "ethers";
 
 const privateKey = process.env.NEXT_PUBLIC_PRIVATE_KEY!;
 
@@ -35,7 +39,12 @@ async function createSchema() {
 
 // Create an Attestation
 
-async function createNotaryAttestation(Description: string, Bet: string, Amount: string, attestingTo: string) {
+async function createNotaryAttestation(
+  Description: string,
+  Bet: string,
+  Amount: string,
+  attestingTo: string,
+) {
   console.log("Creating Attestation");
   const res = await client.createAttestation({
     schemaId: schemaId,
@@ -48,6 +57,62 @@ async function createNotaryAttestation(Description: string, Bet: string, Amount:
     recipients: [attestingTo.toLowerCase()],
   });
   console.log("Attestation created", res);
+
+  const CONTRACT_ADDRESS = "0xF2323D5d9E6903D40e47f80D2ED6785a6C3d7c2B";
+  const publicClient = createPublicClient({
+    chain: baseSepolia,
+    transport: http("https://rpc.ankr.com/base_sepolia"),
+  });
+
+  const walletClient = createWalletClient({
+    account: signer,
+    chain: baseSepolia,
+    transport: http("https://rpc.ankr.com/base_sepolia"),
+  });
+
+  const contract = getContract({
+    address: CONTRACT_ADDRESS,
+    abi: whiteListABI,
+    client: publicClient,
+  });
+  console.log("Contract", contract);
+  const recipient = attestingTo;
+  const name = "Cool Bets";
+  const proposalId = 420;
+  const opinion = 420;
+  const betAmount = 420;
+  const imageURI =
+    "https://github.com/Open-Sorcerer/coolbets/blob/main/Frontend/public/image.png?raw=true";
+  // const data = "data";
+
+  const data = encodeAbiParameters(
+    [
+      { type: "address" },
+      { type: "string" },
+      { type: "uint256" },
+      { type: "uint256" },
+      { type: "uint256" },
+      { type: "string" },
+    ],
+    [
+      recipient as `0x${string}`,
+      name,
+      BigInt(proposalId),
+      BigInt(opinion),
+      BigInt(betAmount),
+      imageURI,
+    ],
+  );
+
+  const tx = await walletClient.writeContract({
+    address: CONTRACT_ADDRESS,
+    abi: whiteListABI,
+    functionName: "didReceiveAttestation",
+    args: [attestingTo.toLowerCase(), res.attestationId, "0x227", data],
+  });
+
+  console.log("Transaction", tx);
+
   return res.attestationId;
 }
 
