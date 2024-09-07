@@ -3,27 +3,11 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { WagmiProvider, createConfig } from "wagmi";
 import { ConnectKitProvider, getDefaultConfig } from "connectkit";
-import {
-  avalancheFuji,
-  baseSepolia,
-  moonbeam,
-  polygonAmoy,
-  polygonZkEvmCardona,
-  scrollSepolia,
-  zkSyncSepoliaTestnet,
-} from "viem/chains";
+import { morphHolesky, rootstockTestnet, spicy } from "viem/chains";
 
 const config = createConfig(
   getDefaultConfig({
-    chains: [
-      polygonZkEvmCardona,
-      polygonAmoy,
-      scrollSepolia,
-      avalancheFuji,
-      baseSepolia,
-      moonbeam,
-      zkSyncSepoliaTestnet,
-    ],
+    chains: [spicy, morphHolesky, rootstockTestnet],
     walletConnectProjectId: process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID!,
     appName: "Coolbets",
     ssr: true,
