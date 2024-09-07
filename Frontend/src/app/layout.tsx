@@ -17,7 +17,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="bg-gradient-radial from-[#fff2dd] via-[#fef3e1] to-[#fef3e1]">
+      <body className="bg-white">
         <Providers>
           <Navbar />
           {children}

@@ -6,6 +6,7 @@ import { useAccount } from "wagmi";
 import Card from "@/components/trade/card";
 import { ABI, coolBetContracts } from "@/utils/contracts";
 import { useQuery } from "@tanstack/react-query";
+import Spinner from "@/components/shared/Spinner";
 
 export const fetchCache = "force-no-store";
 
@@ -61,7 +62,7 @@ export default function TradePage() {
     return proposals;
   };
 
-  const { data: allProposals } = useQuery({
+  const { data: allProposals, isLoading } = useQuery({
     queryKey: ["proposals", chain?.id],
     queryFn: fetchProposals,
   });
@@ -73,9 +74,23 @@ export default function TradePage() {
 
   return (
     <div className="flex flex-col w-full py-32 px-5 md:px-32 lg:px-28 xl:px-40 2xl:px-48">
-      <h1 className="text-2xl md:text-3xl font-title font-medium">Trade on Live Opinions ⚡️</h1>
-      <div className="grid grid-flow-row grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-3 mt-4">
-        {allProposals?.map((data, index) => <Card key={index} {...data} />)}
+      <h1 className="text-2xl md:text-3xl text-neutral-600 font-title font-medium">
+        Trade on Live Opinions ⚡️
+      </h1>
+      <div
+        className={`flex flex-wrap ${allProposals && allProposals.length % 3 === 0 ? "justify-between" : "justify-start"} gap-3 mt-4`}
+      >
+        {isLoading ? (
+          <div className="flex items-center justify-center w-full h-full py-20">
+            <Spinner className="text-violet-500" />
+          </div>
+        ) : allProposals && allProposals.length < 1 ? (
+          <div>
+            <p className="text-neutral-600 font-primary font-medium">No contests found</p>
+          </div>
+        ) : (
+          <>{allProposals?.map((data, index) => <Card key={index} {...data} />)}</>
+        )}
       </div>
     </div>
   );

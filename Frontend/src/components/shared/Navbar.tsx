@@ -22,7 +22,7 @@ const Navbar = () => {
   }, [isMobileMenuOpen]);
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 backdrop-filter backdrop-blur-md mx-5 md:mx-20 lg:mx-28 xl:mx-36 2xl:44 md:px-10 my-2 border border-neutral-300 bg-[#ffe1b1] rounded-[3rem]">
+    <nav className="fixed top-0 left-0 right-0 z-50 backdrop-filter backdrop-blur-md mx-5 md:mx-20 lg:mx-28 xl:mx-36 2xl:44 md:px-10 my-2 border border-violet-100 bg-violet-50 rounded-[3rem]">
       <div className="max-w-screen-3xl flex flex-wrap items-center justify-between px-4 py-2">
         <div className="flex">
           <Link href="/" className="flex gap-2 items-center cursor-pointer">
@@ -59,7 +59,7 @@ const Navbar = () => {
           className={`w-full lg:block lg:w-auto ${isMobileMenuOpen ? "block" : "hidden"}`}
           id="navbar-default"
         >
-          <ul className="font-medium font-primary flex flex-col p-4 md:p-0 mt-4 rounded-lg md:flex-row md:space-x-10 rtl:space-x-reverse md:mt-0">
+          <ul className="font-semibold font-primary flex flex-col p-4 md:p-0 mt-4 rounded-lg md:flex-row md:space-x-10 rtl:space-x-reverse md:mt-0">
             <li>
               <Link
                 href="/"

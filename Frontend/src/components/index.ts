@@ -1,4 +1,4 @@
-import Hero from "./Home";
+import Hero from "./home";
 import CreateCampaign from "./create";
 import Navbar from "./shared/Navbar";
 import Input from "./form/input";
