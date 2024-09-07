@@ -1,0 +1,35 @@
+type CoolBets_ProposalCreated {
+  id: ID!
+  proposalId: BigInt!
+  description: String!
+  option1: String!
+  option2: String!
+  deadline: BigInt!
+}
+
+type CoolBets_ProposalFinalized {
+  id: ID!
+  proposalId: BigInt!
+  winningOption: BigInt!
+}
+
+type CoolBets_RewardReceivedUser {
+  id: ID!
+  user: String!
+  amount: BigInt!
+}
+
+type CoolBets_RewardsDistributed {
+  id: ID!
+  proposalId: BigInt!
+  totalRewards: BigInt!
+}
+
+type CoolBets_VotePlaced {
+  id: ID!
+  proposalId: BigInt!
+  user: String!
+  option: BigInt!
+  amount: BigInt!
+}
+
