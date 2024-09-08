@@ -1,4 +1,4 @@
-# CoolBets: Decentralized Opinion Trading Platform
+# CoolBets: Decentralized Opinion Trading Platform 
 
 <p align="center">
   <a href="https://coolbets.vercel.app">
