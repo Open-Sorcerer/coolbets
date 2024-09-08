@@ -21,14 +21,17 @@ CoolBets revolutionizes the way people engage with ideas and predictions by crea
 
 - [Sign Protocol Attestations](https://testnet-scan.sign.global/schema/onchain_evm_84532_0x227)
 - Rootstock Smart Contracts
-  - [BetFactory.sol](https://explorer.testnet.rootstock.io/address/0xf2323d5d9e6903d40e47f80d2ed6785a6c3d7c2b?__tab=transactions&__ctab=general)
+
   - [CoolBets.sol](https://explorer.testnet.rootstock.io/address/0xe6a5267590ac048a599014a18815b9daf247eee7)
+
 - Chilliz Smart Contracts
-  - [BetFactory.sol](https://spicy-explorer.chiliz.com/address/0xE1486aa7d249cf84Ff532a7dbD424baa50Eb6d29)
+
   - [CoolBets.sol](https://spicy-explorer.chiliz.com/address/0x6E84c2AF3393A2C85a6eA96765319040fd207f8a)
+
 - Morph L2 Smart Contracts
-  - [BetFactory.sol](https://explorer-holesky.morphl2.io/address/0xE1486aa7d249cf84Ff532a7dbD424baa50Eb6d29)
+
   - [CoolBets.sol](https://explorer-holesky.morphl2.io/address/0x6E84c2AF3393A2C85a6eA96765319040fd207f8a)
+
 - Base Smart Contracts
 
   - [CoolBetsNFT.sol](https://sepolia.basescan.org/address/0xE1486aa7d249cf84Ff532a7dbD424baa50Eb6d29)
